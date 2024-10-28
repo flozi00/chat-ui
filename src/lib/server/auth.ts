@@ -14,7 +14,7 @@ import type { Cookies } from "@sveltejs/kit";
 import { collections } from "$lib/server/database";
 import JSON5 from "json5";
 import { logger } from "$lib/server/logger";
-import { importJWK, jwtVerify } from "jose";
+import { importJWK, jwtVerify, type JWK } from "jose";
 import axios from "axios";
 
 export interface OIDCSettings {
@@ -168,9 +168,8 @@ export async function validateAndParseCsrfToken(
 	return null;
 }
 
-const POLICY_AUD = env.POLICY_AUD;
 const TEAM_DOMAIN = env.TEAM_DOMAIN;
-const CERTS_URL = `${TEAM_DOMAIN}/cdn-cgi/access/certs`;
+const CERTS_URL = `https://${TEAM_DOMAIN}/cdn-cgi/access/certs`;
 
 async function _get_public_keys(): Promise<unknown[]> {
 	try {
@@ -188,13 +187,15 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; emai
 		const keys = await _get_public_keys();
 		for (const keyDict of keys) {
 			try {
-				const publicKey = await importJWK(keyDict, "RS256");
-				const { payload } = await jwtVerify(token, publicKey, { audience: POLICY_AUD });
-				return { valid: true, email: (payload as any).email };
+				const publicKey = await importJWK(keyDict as JWK, "RS256");
+				const { payload } = await jwtVerify(token, publicKey);
+				logger.error(`User Mail ${payload.email}`);
+				return { valid: true, email: payload.email as string };
 			} catch (error) {
 				// Continue to the next key
 			}
 		}
+		logger.error("No keys worked for token");
 		return { valid: false, email: "anon" };
 	} catch (error) {
 		logger.error("Error verifying token", error);
@@ -202,8 +203,10 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; emai
 	}
 }
 
-export async function get_current_username(request: Request): Promise<string | null> {
-	const token = request.cookies.get("CF_Authorization");
+import type { RequestEvent } from "@sveltejs/kit";
+
+export async function get_current_username(event: RequestEvent): Promise<string | null> {
+	const token = event.cookies.get("CF_Authorization");
 	if (token) {
 		const { valid, email } = await verifyToken(token);
 		if (valid) {
