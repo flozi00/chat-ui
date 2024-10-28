@@ -248,7 +248,4 @@
 		<Toast message={currentError} />
 	{/if}
 	<slot />
-	{#if data.user?.email}
-		<div class="user-email">Logged in as: {data.user.email}</div>
-	{/if}
 </div>
