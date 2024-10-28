@@ -56,7 +56,7 @@ MODELS=`[
     "tokenizer": "microsoft/Phi-3-mini-4k-instruct-gguf",
     "preprompt": "",
     "parameters": {
-      "stop": ["<|end|>", "<|endoftext|>", "<|assistant|>"],
+      "stop": ["<|end|>", "|endoftext|", "<|assistant|>"],
       "temperature": 0.7,
       "max_new_tokens": 1024,
       "truncate": 3071

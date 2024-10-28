@@ -30,7 +30,7 @@ MODELS=`[
     "preprompt": "",
     "chatPromptTemplate": "<s>{{preprompt}}{{#each messages}}{{#ifUser}}<|user|>\n{{content}}<|end|>\n<|assistant|>\n{{/ifUser}}{{#ifAssistant}}{{content}}<|end|>\n{{/ifAssistant}}{{/each}}",
     "parameters": {
-      "stop": ["<|end|>", "<|endoftext|>", "<|assistant|>"],
+      "stop": ["<|end|>", "|endoftext|", "<|assistant|>"],
       "temperature": 0.7,
       "max_new_tokens": 1024,
       "truncate": 3071
