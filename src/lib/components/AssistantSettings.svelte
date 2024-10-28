@@ -87,12 +87,10 @@
 
 	let loading = false;
 
-	let ragMode: false | "links" | "domains" | "all" = assistant?.rag?.allowAllDomains
+	let ragMode: false | "filtered" | "all" = assistant?.rag?.allowAllDomains
 		? "all"
-		: assistant?.rag?.allowedLinks?.length ?? 0 > 0
-		? "links"
 		: (assistant?.rag?.allowedDomains?.length ?? 0) > 0
-		? "domains"
+		? "filtered"
 		: false;
 
 	let tools = assistant?.tools ?? [];
@@ -142,12 +140,9 @@
 			formData.set("ragAllowAll", "true");
 			formData.set("ragLinkList", "");
 			formData.set("ragDomainList", "");
-		} else if (ragMode === "links") {
+		} else if (ragMode === "filtered") {
 			formData.set("ragAllowAll", "false");
-			formData.set("ragDomainList", "");
-		} else if (ragMode === "domains") {
-			formData.set("ragAllowAll", "false");
-			formData.set("ragLinkList", "");
+			//formData.set("ragLinkList", "");
 		}
 
 		formData.set("tools", tools.join(","));
@@ -475,17 +470,17 @@
 
 					<label class="mt-1">
 						<input
-							checked={ragMode === "domains"}
-							on:change={() => (ragMode = "domains")}
+							checked={ragMode === "filtered"}
+							on:change={() => (ragMode = "filtered")}
 							type="radio"
 							name="ragMode"
 							value={false}
 						/>
-						<span class="my-2 text-sm" class:font-semibold={ragMode === "domains"}>
-							Domains search
+						<span class="my-2 text-sm" class:font-semibold={ragMode === "filtered"}>
+							Filtered Search
 						</span>
 					</label>
-					{#if ragMode === "domains"}
+					{#if ragMode === "filtered"}
 						<span class="mb-2 text-xs text-gray-500">
 							Specify domains and URLs that the application can search, separated by commas.
 						</span>
@@ -497,25 +492,7 @@
 							value={assistant?.rag?.allowedDomains?.join(",") ?? ""}
 						/>
 						<p class="text-xs text-red-500">{getError("ragDomainList", form)}</p>
-					{/if}
 
-					<label class="mt-1">
-						<input
-							checked={ragMode === "links"}
-							on:change={() => (ragMode = "links")}
-							type="radio"
-							name="ragMode"
-							value={false}
-						/>
-						<span class="my-2 text-sm" class:font-semibold={ragMode === "links"}>
-							Specific Links
-						</span>
-					</label>
-					{#if ragMode === "links"}
-						<span class="mb-2 text-xs text-gray-500">
-							Specify a maximum of 10 direct URLs that the Assistant will access. HTML & Plain Text
-							only, separated by commas
-						</span>
 						<input
 							name="ragLinkList"
 							class="w-full rounded-lg border-2 border-gray-200 bg-gray-100 p-2"

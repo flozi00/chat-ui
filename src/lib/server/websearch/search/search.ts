@@ -27,6 +27,7 @@ export async function* search(
 > {
 	const newLinks: string[] = [];
 	let requireQuery = false;
+	let search_links: WebSearchSource[] = [];
 
 	if (ragSettings && ragSettings?.allowedLinks.length > 0) {
 		for (const link of ragSettings.allowedLinks) {
@@ -37,10 +38,7 @@ export async function* search(
 		}
 		if (!requireQuery) {
 			yield makeGeneralUpdate({ message: "Using links specified in Assistant" });
-			return {
-				searchQuery: "",
-				pages: await directLinksToSource(ragSettings?.allowedLinks).then(filterByBlockList),
-			};
+			search_links = await directLinksToSource(ragSettings?.allowedLinks).then(filterByBlockList);
 		}
 	}
 
@@ -71,10 +69,7 @@ export async function* search(
 
 	if (newLinks.length > 0) {
 		yield makeGeneralUpdate({ message: "Using links specified in Assistant" });
-		return {
-			searchQuery: "",
-			pages: await directLinksToSource(newLinks).then(filterByBlockList),
-		};
+		search_links = await directLinksToSource(newLinks).then(filterByBlockList);
 	}
 
 	let combinedResults: WebSearchSource[] = [];
@@ -100,7 +95,7 @@ export async function* search(
 	// using num_searches iterating over the list to get the most relevant results
 	// example input: [a1,a2,a3,a4,a5,b1,b2,b3,b4,b5,c1,c2,c3,c4,c5]
 	// example output: [a1,b1,c1,a2,b2,c2,a3,b3,c3,a4,b4,c4,a5,b5,c5]
-	const sortedResults = [];
+	const sortedResults = search_links;
 	for (let i = 0; i < searchQueries.length; i++) {
 		for (let j = i; j < combinedResults.length; j += searchQueries.length) {
 			sortedResults.push(combinedResults[j]);

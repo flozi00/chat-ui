@@ -21,7 +21,7 @@ import { MetricsServer } from "../metrics";
 import { logger } from "$lib/server/logger";
 import { env } from "$env/dynamic/private";
 
-const num_searches = env.NUM_SEARCHES ? parseInt(env.NUM_SEARCHES, 10) : 3;
+const num_searches = env.NUM_SEARCHES ? parseInt(env.NUM_SEARCHES, 10) : 1;
 const MAX_N_PAGES_TO_SCRAPE = 10 * num_searches;
 const MAX_N_PAGES_TO_EMBED = 10 as const;
 
@@ -34,6 +34,7 @@ export async function* runWebSearch(
 	const prompt = messages[messages.length - 1].content;
 	const createdAt = new Date();
 	const updatedAt = new Date();
+	const max_pages = MAX_N_PAGES_TO_SCRAPE + (ragSettings?.allowedLinks?.length ?? 0) * num_searches;
 
 	MetricsServer.getMetrics().webSearch.requestCount.inc();
 
@@ -52,7 +53,7 @@ export async function* runWebSearch(
 		yield makeGeneralUpdate({ message: "Browsing search results" });
 
 		const allScrapedPages = yield* mergeAsyncGenerators(
-			pages.slice(0, MAX_N_PAGES_TO_SCRAPE).map(scrape(embeddingModel.chunkCharLength))
+			pages.slice(0, max_pages).map(scrape(embeddingModel.chunkCharLength))
 		);
 		const scrapedPages = allScrapedPages
 			.filter((p): p is WebSearchScrapedSource => Boolean(p))
@@ -60,7 +61,7 @@ export async function* runWebSearch(
 			.slice(0, MAX_N_PAGES_TO_EMBED);
 
 		if (!scrapedPages.length) {
-			throw Error(`No text found in the first ${MAX_N_PAGES_TO_SCRAPE} results`);
+			throw Error(`No text found in the first ${max_pages} results`);
 		}
 
 		// Chunk the text of each of the elements and find the most similar chunks to the prompt
