@@ -1,5 +1,5 @@
 import { redirect } from "@sveltejs/kit";
-import { getOIDCAuthorizationUrl, verifyToken, get_current_username } from "$lib/server/auth";
+import { getOIDCAuthorizationUrl, get_current_username } from "$lib/server/auth";
 import { base } from "$app/paths";
 import { env } from "$env/dynamic/private";
 
@@ -7,11 +7,10 @@ export const actions = {
 	async default({ url, locals, request, cookies }) {
 		const token = cookies.get("CF_Authorization");
 		if (token) {
-			const { valid, email } = await verifyToken(token);
-			if (valid) {
-				locals.user = { email };
+			const user = await get_current_username(token);
+			if (user) {
+				locals.user = user;
 				redirect(303, `${base}/`);
-				return;
 			}
 		}
 

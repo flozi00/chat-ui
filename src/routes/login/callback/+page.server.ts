@@ -1,5 +1,5 @@
 import { redirect, error } from "@sveltejs/kit";
-import { getOIDCUserData, validateAndParseCsrfToken, verifyToken } from "$lib/server/auth";
+import { getOIDCUserData, validateAndParseCsrfToken, get_current_username } from "$lib/server/auth";
 import { z } from "zod";
 import { base } from "$app/paths";
 import { updateUser } from "./updateUser";
@@ -15,11 +15,10 @@ const allowedUserEmails = z
 export async function load({ url, locals, cookies, request, getClientAddress }) {
 	const token = cookies.get("CF_Authorization");
 	if (token) {
-		const { valid, email } = await verifyToken(token);
-		if (valid) {
-			locals.user = { email };
+		const user = await get_current_username(token);
+		if (user) {
+			locals.user = user;
 			redirect(302, `${base}/`);
-			return;
 		}
 	}
 

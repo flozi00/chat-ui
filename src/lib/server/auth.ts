@@ -16,6 +16,7 @@ import JSON5 from "json5";
 import { logger } from "$lib/server/logger";
 import { importJWK, jwtVerify, type JWK } from "jose";
 import axios from "axios";
+import type { User } from "$lib/types/User";
 
 export interface OIDCSettings {
 	redirectURI: string;
@@ -203,14 +204,27 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; emai
 	}
 }
 
-import type { RequestEvent } from "@sveltejs/kit";
+import { ObjectId } from "mongodb";
 
-export async function get_current_username(event: RequestEvent): Promise<string | null> {
-	const token = event.cookies.get("CF_Authorization");
+export async function get_current_username(token: string): Promise<User | null> {
 	if (token) {
 		const { valid, email } = await verifyToken(token);
 		if (valid) {
-			return email;
+			const user: User = {
+				username: email,
+				_id: new ObjectId(
+					(await sha256(email + "dummyforotherinformationandsoonneedstobe24charlong")).slice(0, 24)
+				),
+				name: email,
+				email,
+				avatarUrl: "",
+				hfUserId: email,
+				isAdmin: false,
+				isEarlyAccess: false,
+				createdAt: new Date(),
+				updatedAt: new Date(),
+			};
+			return user;
 		}
 	}
 	return null;
