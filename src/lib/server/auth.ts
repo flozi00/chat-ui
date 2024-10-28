@@ -190,7 +190,6 @@ export async function verifyToken(token: string): Promise<{ valid: boolean; emai
 			try {
 				const publicKey = await importJWK(keyDict as JWK, "RS256");
 				const { payload } = await jwtVerify(token, publicKey);
-				logger.error(`User Mail ${payload.email}`);
 				return { valid: true, email: payload.email as string };
 			} catch (error) {
 				// Continue to the next key
