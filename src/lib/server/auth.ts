@@ -14,7 +14,7 @@ import type { Cookies } from "@sveltejs/kit";
 import { collections } from "$lib/server/database";
 import JSON5 from "json5";
 import { logger } from "$lib/server/logger";
-import jwt from "jsonwebtoken";
+import { importJWK, jwtVerify } from "jose";
 import axios from "axios";
 
 export interface OIDCSettings {
@@ -172,16 +172,11 @@ const POLICY_AUD = env.POLICY_AUD;
 const TEAM_DOMAIN = env.TEAM_DOMAIN;
 const CERTS_URL = `${TEAM_DOMAIN}/cdn-cgi/access/certs`;
 
-async function _get_public_keys(): Promise<jwt.Secret[]> {
+async function _get_public_keys(): Promise<unknown[]> {
 	try {
 		const response = await axios.get(CERTS_URL);
-		const publicKeys: jwt.Secret[] = [];
 		const jwkSet = response.data;
-		for (const keyDict of jwkSet.keys) {
-			const publicKey = jwt.RSAKey.fromJWK(keyDict);
-			publicKeys.push(publicKey);
-		}
-		return publicKeys;
+		return jwkSet.keys;
 	} catch (error) {
 		logger.error("Error fetching public keys from Cloudflare", error);
 		throw error;
@@ -191,10 +186,11 @@ async function _get_public_keys(): Promise<jwt.Secret[]> {
 export async function verifyToken(token: string): Promise<{ valid: boolean; email: string }> {
 	try {
 		const keys = await _get_public_keys();
-		for (const key of keys) {
+		for (const keyDict of keys) {
 			try {
-				const tokenInfo = jwt.verify(token, key, { audience: POLICY_AUD, algorithms: ["RS256"] });
-				return { valid: true, email: (tokenInfo as any).email };
+				const publicKey = await importJWK(keyDict, "RS256");
+				const { payload } = await jwtVerify(token, publicKey, { audience: POLICY_AUD });
+				return { valid: true, email: (payload as any).email };
 			} catch (error) {
 				// Continue to the next key
 			}
