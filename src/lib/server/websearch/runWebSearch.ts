@@ -19,9 +19,11 @@ import {
 import { mergeAsyncGenerators } from "$lib/utils/mergeAsyncGenerators";
 import { MetricsServer } from "../metrics";
 import { logger } from "$lib/server/logger";
+import { env } from "$env/dynamic/private";
 
-const MAX_N_PAGES_TO_SCRAPE = 15 as const;
-const MAX_N_PAGES_TO_EMBED = 5 as const;
+const num_searches = env.NUM_SEARCHES ? parseInt(env.NUM_SEARCHES, 10) : 3;
+const MAX_N_PAGES_TO_SCRAPE = 10 * num_searches;
+const MAX_N_PAGES_TO_EMBED = 10 as const;
 
 export async function* runWebSearch(
 	conv: Conversation,
