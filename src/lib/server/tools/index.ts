@@ -75,14 +75,8 @@ export const editableToolSchema = z
 			.regex(/^[a-zA-Z_][a-zA-Z0-9_]*$/) // only allow letters, numbers, and underscores, and start with a letter or underscore
 			.min(1)
 			.max(40),
-		// only allow huggingface spaces either through namespace or direct URLs
-		baseUrl: z.union([
-			z.string().regex(/^[^/]+\/[^/]+$/),
-			z
-				.string()
-				.regex(/^https:\/\/huggingface\.co\/spaces\/[a-zA-Z0-9-]+\/[a-zA-Z0-9-]+$/)
-				.transform((url) => url.split("/").slice(-2).join("/")),
-		]),
+		// allow any URL
+		baseUrl: z.string().url(),
 		endpoint: z.string().min(1).max(100),
 		inputs: z.array(toolInputSchema),
 		outputComponent: z.string().min(1).max(100),
