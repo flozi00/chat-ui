@@ -44,9 +44,6 @@ Current Question: Where is it being hosted?`,
 		{
 			from: "assistant",
 			content: `list of all Nvidia GPUs
-list all consumer gpus nvidia
-list all datacenter gpus nvidia
-list all workstation gpus nvidia
 nvidia gpu vram comparison`,
 		},
 		{
