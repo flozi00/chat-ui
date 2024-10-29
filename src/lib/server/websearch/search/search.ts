@@ -42,9 +42,14 @@ export async function* search(
 		}
 	}
 
-	let searchQueries = await generateQuery(messages);
-	if (!searchQueries.length && query) {
+	let searchQueries: string[] = [];
+	if (query) {
 		searchQueries = [query];
+	} else {
+		searchQueries = await generateQuery(messages);
+		if (!searchQueries.length && query) {
+			searchQueries = [query];
+		}
 	}
 
 	for (const searchQuery of searchQueries) {
