@@ -54,5 +54,5 @@ export async function GET({ url }) {
 		Pick<BaseTool, "_id" | "displayName" | "color" | "icon"> & { createdByName?: string }
 	>;
 
-	return Response.json(tools.map((tool) => ({ ...tool, _id: tool._id.toString() })).slice(0, 5));
+	return Response.json(tools.map((tool) => ({ ...tool, _id: tool._id.toString() })).slice(0, 50));
 }

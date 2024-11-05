@@ -3,7 +3,7 @@ import { ObjectId } from "mongodb";
 import { fetchWeatherData, fetchCoordinates } from "./utils";
 
 const weather: ConfigTool = {
-	_id: new ObjectId("00000000000000000000000D"),
+	_id: new ObjectId("00000000000000000000000E"),
 	type: "config",
 	description: "Fetch the weather for a specified location",
 	color: "blue",
