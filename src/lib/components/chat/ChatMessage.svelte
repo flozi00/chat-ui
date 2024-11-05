@@ -265,10 +265,12 @@
 				</div>
 			{/if}
 			{#if searchUpdates && searchUpdates.length > 0}
-				<OpenWebSearchResults
-					classNames={tokens.length ? "mb-3.5" : ""}
-					webSearchMessages={searchUpdates}
-				/>
+					{#each searchUpdates as searchUpdate (searchUpdate.id)}
+						<OpenWebSearchResults
+							classNames={tokens.length ? "mb-3.5" : ""}
+							webSearchMessages={[searchUpdate]}
+						/>
+					{/each}
 			{/if}
 
 			{#if toolUpdates}
