@@ -233,9 +233,12 @@ export async function* runTools(
 	);
 
 	const toolContext: BackendToolContext = { conv, messages, preprompt, assistant, ip, username };
-	const toolResults: (ToolResult | undefined)[] = yield* mergeAsyncGenerators(
-		calls.map((call) => callTool(toolContext, tools, call))
-	);
+
+	// Run all tool calls in parallel
+	const toolCallGenerators = calls.map((call) => callTool(toolContext, tools, call));
+	const toolResults: (ToolResult | undefined)[] = yield* mergeAsyncGenerators(toolCallGenerators);
+
+	// Filter out undefined results and return
 	return toolResults.filter((result): result is ToolResult => result !== undefined);
 }
 

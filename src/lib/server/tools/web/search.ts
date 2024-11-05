@@ -5,7 +5,8 @@ import { runWebSearch } from "../../websearch/runWebSearch";
 const websearch: ConfigTool = {
 	_id: new ObjectId("00000000000000000000000A"),
 	type: "config",
-	description: "Search the web for answers to the user's query",
+	description:
+		"Search the web for answers to the user's query, useful for general questions and web searches. Not useable for: Calculations, weather checks, image generation, document parsing.",
 	color: "blue",
 	icon: "wikis",
 	displayName: "Web Search",
@@ -16,7 +17,7 @@ const websearch: ConfigTool = {
 			name: "query",
 			type: "str",
 			description:
-				"A focused search query targeting a specific aspect of the user's question at once. Use the same language as the user's original query.",
+				"A focused search query targeting a specific aspect of the user's question at once.",
 			paramType: "required",
 		},
 	],
