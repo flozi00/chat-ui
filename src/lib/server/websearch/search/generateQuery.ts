@@ -92,7 +92,7 @@ Elon Musk Biography`,
 		},
 	];
 
-	const preprompt = `You are tasked with generating precise, effective, and diverse web search queries to answer the user's question. Provide a concise and specific query for Google search that will yield the most relevant and up-to-date results. Include key terms and related phrases, and avoid unnecessary words. Answer with only the queries, split by line breaks. Ensure each query is unique and creative, covering different angles and perspectives while keeping the initial language. You are not allowed to translated. Avoid duplicates and make the prompts as diverse as possible. Make up to ${num_searches} queries if needed. Today is ${currentDate}`;
+	const preprompt = `You are tasked with generating precise, effective, and diverse web search queries to answer the user's question. Provide a concise and specific query for Google search that will yield the most relevant and up-to-date results. Include key terms and related phrases, and avoid unnecessary words. Answer with only the queries, split by line breaks. Ensure each query is unique and creative, covering different angles and perspectives while keeping the initial language. You are not allowed to translated. Avoid duplicates and make the prompts as diverse as possible. Make up to ${num_searches} queries if needed. Use only as much queries as you need. Today is ${currentDate}`;
 
 	const webQuery = await generateFromDefaultEndpoint({
 		messages: convQuery,

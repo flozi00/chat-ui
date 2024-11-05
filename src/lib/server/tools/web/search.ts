@@ -6,7 +6,7 @@ const websearch: ConfigTool = {
 	_id: new ObjectId("00000000000000000000000A"),
 	type: "config",
 	description:
-		"Search the web for answers to the user's query, useful for general questions and web searches. Not useable for: Calculations, weather checks, image generation, document parsing.",
+		"Search the web for answers to the user's query, useful for general questions and researches.",
 	color: "blue",
 	icon: "wikis",
 	displayName: "Web Search",

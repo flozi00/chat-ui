@@ -43,13 +43,11 @@ export async function* search(
 	}
 
 	let searchQueries: string[] = [];
-	if (query) {
+	searchQueries = await generateQuery(messages);
+	if (!searchQueries.length && query) {
 		searchQueries = [query];
 	} else {
-		searchQueries = await generateQuery(messages);
-		if (!searchQueries.length && query) {
-			searchQueries = [query];
-		}
+		searchQueries = searchQueries.concat(query ? [query] : []);
 	}
 
 	for (const searchQuery of searchQueries) {
