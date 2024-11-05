@@ -16,7 +16,7 @@ const websearch: ConfigTool = {
 			name: "query",
 			type: "str",
 			description:
-				"A search query which will be used to fetch the most relevant snippets regarding the user's query",
+				"A focused search query targeting a specific aspect of the user's question at once. Use the same language as the user's original query.",
 			paramType: "required",
 		},
 	],
