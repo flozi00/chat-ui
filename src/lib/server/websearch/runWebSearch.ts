@@ -21,7 +21,7 @@ import { MetricsServer } from "../metrics";
 import { logger } from "$lib/server/logger";
 import { env } from "$env/dynamic/private";
 
-const num_searches = env.NUM_SEARCHES ? parseInt(env.NUM_SEARCHES, 10) : 1;
+const num_searches = env.NUM_SEARCHES ? parseInt(env.NUM_SEARCHES, 10) + 1 : 1;
 const MAX_N_PAGES_TO_SCRAPE = 5 * num_searches;
 const MAX_N_PAGES_TO_EMBED = 30 as const;
 

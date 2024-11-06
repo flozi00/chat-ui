@@ -7,8 +7,8 @@ import { stringifyMarkdownElement } from "../markdown/utils/stringify";
 import { getCombinedSentenceSimilarity } from "./combine";
 import { flattenTree } from "./tree";
 
-const MIN_CHARS = 3_000;
-const SOFT_MAX_CHARS = 8_000;
+const MIN_CHARS = 16_000;
+const SOFT_MAX_CHARS = 128_000;
 
 export async function findContextSources(
 	sources: WebSearchScrapedSource[],
@@ -49,7 +49,7 @@ export async function findContextSources(
 
 		// Ignore elements that are too similar to already selected elements
 		const tooSimilar = selectedEmbeddings.some(
-			(selectedEmbedding) => innerProduct(selectedEmbedding, embedding.embedding) < 0.01
+			(selectedEmbedding) => innerProduct(selectedEmbedding, embedding.embedding) < 0.05
 		);
 		if (tooSimilar) continue;
 
@@ -70,7 +70,7 @@ export async function findContextSources(
 		if (totalChars > MIN_CHARS && embedding.distance > 0.25) break;
 	}
 
-	const contextSources = sourcesMarkdownElems
+	let contextSources = sourcesMarkdownElems
 		.map<WebSearchUsedSource>((elems, idx) => {
 			const sourceSelectedElems = elems.filter((elem) => selectedMarkdownElems.has(elem));
 			const context = sourceSelectedElems.map(stringifyMarkdownElement).join("\n");
@@ -78,6 +78,14 @@ export async function findContextSources(
 			return { ...source, context };
 		})
 		.filter((contextSource) => contextSource.context.length > 0);
+
+	// check for duplicate sources
+	const seenSources = new Set<string>();
+	contextSources = contextSources.filter((contextSource) => {
+		const seen = seenSources.has(contextSource.link);
+		seenSources.add(contextSource.link);
+		return !seen;
+	});
 
 	MetricsServer.getMetrics().webSearch.embeddingDuration.observe(Date.now() - startTime);
 
