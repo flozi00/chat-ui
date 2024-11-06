@@ -1,13 +1,13 @@
 import { MetricsServer } from "$lib/server/metrics";
 import type { WebSearchScrapedSource, WebSearchUsedSource } from "$lib/types/WebSearch";
 import type { EmbeddingBackendModel } from "../../embeddingModels";
-import { getSentenceSimilarity, innerProduct } from "../../sentenceSimilarity";
+import { getSentenceSimilarity } from "../../sentenceSimilarity";
 import { MarkdownElementType, type MarkdownElement } from "../markdown/types";
 import { stringifyMarkdownElement } from "../markdown/utils/stringify";
 import { getCombinedSentenceSimilarity } from "./combine";
 import { flattenTree } from "./tree";
 
-const MIN_CHARS = 16_000;
+const MIN_CHARS = 8_000;
 const SOFT_MAX_CHARS = 128_000;
 
 export async function findContextSources(
@@ -46,12 +46,6 @@ export async function findContextSources(
 	const selectedEmbeddings: number[][] = [];
 	for (const embedding of topEmbeddings) {
 		const elem = markdownElems[embedding.idx];
-
-		// Ignore elements that are too similar to already selected elements
-		const tooSimilar = selectedEmbeddings.some(
-			(selectedEmbedding) => innerProduct(selectedEmbedding, embedding.embedding) < 0.05
-		);
-		if (tooSimilar) continue;
 
 		// Add element
 		if (!selectedMarkdownElems.has(elem)) {

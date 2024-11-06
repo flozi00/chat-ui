@@ -44,7 +44,7 @@ export async function* search(
 
 	let searchQueries: string[] = [];
 	searchQueries = await generateQuery(messages);
-	if (!searchQueries.length && query) {
+	if (searchQueries.length <= 1 && query) {
 		searchQueries = [query];
 	} else {
 		searchQueries = searchQueries.concat(query ? [query] : []);
