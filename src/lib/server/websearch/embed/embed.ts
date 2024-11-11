@@ -7,8 +7,8 @@ import { stringifyMarkdownElement } from "../markdown/utils/stringify";
 import { getCombinedSentenceSimilarity } from "./combine";
 import { flattenTree } from "./tree";
 
-const MIN_CHARS = 8_000;
-const SOFT_MAX_CHARS = 128_000;
+const MIN_CHARS = 4_000;
+const SOFT_MAX_CHARS = 16_000;
 
 export async function findContextSources(
 	sources: WebSearchScrapedSource[],
