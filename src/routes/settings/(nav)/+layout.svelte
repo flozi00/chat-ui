@@ -112,14 +112,14 @@
 				</a>
 			{/each}
 			{#if !data.loginEnabled || (data.loginEnabled && !!data.user)}
+				{#if data.user?.isAdmin}
 				<a
-					href="{base}/settings/assistants/new"
-					class="group flex h-10 flex-none items-center gap-2 pl-3 pr-2 text-sm text-gray-500 hover:bg-gray-100 md:rounded-xl
-				{$page.url.pathname === `${base}/settings/assistants/new` ? '!bg-gray-100 !text-gray-800' : ''}"
+					href={`${base}/settings/assistants/new`}
+					class="flex items-center gap-1 whitespace-nowrap rounded-lg border bg-white py-1 pl-1.5 pr-2.5 shadow-sm hover:bg-gray-50 hover:shadow-none dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-700"
 				>
-					<CarbonAdd />
-					<div class="truncate">Create new assistant</div>
+					<CarbonAdd />Create new assistant
 				</a>
+				{/if}
 			{/if}
 
 			<!-- Other Assistants -->
