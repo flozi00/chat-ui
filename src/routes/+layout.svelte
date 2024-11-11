@@ -19,11 +19,13 @@
 	import titleUpdate from "$lib/stores/titleUpdate";
 	import DisclaimerModal from "$lib/components/DisclaimerModal.svelte";
 	import ExpandNavigation from "$lib/components/ExpandNavigation.svelte";
+	import QuickstartPage from "$lib/components/QuickstartPage.svelte";
 
 	export let data;
 
 	let isNavOpen = false;
 	let isNavCollapsed = false;
+	let showQuickstart = true;
 
 	let errorToastTimeout: ReturnType<typeof setTimeout>;
 	let currentError: string | null;
@@ -253,5 +255,14 @@
 	{#if currentError}
 		<Toast message={currentError} />
 	{/if}
-	<slot />
+	{#if showQuickstart}
+		<QuickstartPage
+			docs={data.quickstart.docs}
+			assistants={data.quickstart.assistants}
+			tools={data.quickstart.tools}
+			on:close={() => (showQuickstart = false)}
+		/>
+	{:else}
+		<slot />
+	{/if}
 </div>

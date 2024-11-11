@@ -4,6 +4,7 @@
 	import { page } from "$app/stores";
 	import { env as envPublic } from "$env/dynamic/public";
 	import ChatWindow from "$lib/components/chat/ChatWindow.svelte";
+	import QuickstartPage from "$lib/components/QuickstartPage.svelte";
 	import { ERROR_MESSAGES, error } from "$lib/stores/errors";
 	import { pendingMessage } from "$lib/stores/pendingMessage";
 	import { useSettingsStore } from "$lib/stores/settings.js";
@@ -13,6 +14,7 @@
 	export let data;
 	let loading = false;
 	let files: File[] = [];
+	let showQuickstart = true;
 
 	const settings = useSettingsStore();
 
@@ -91,11 +93,20 @@
 	<title>{envPublic.PUBLIC_APP_NAME}</title>
 </svelte:head>
 
-<ChatWindow
-	on:message={(ev) => createConversation(ev.detail)}
-	{loading}
-	assistant={data.assistant}
-	{currentModel}
-	models={data.models}
-	bind:files
-/>
+{#if showQuickstart}
+	<QuickstartPage
+		docs={data.quickstart.docs}
+		assistants={data.quickstart.assistants}
+		tools={data.quickstart.tools}
+		on:close={() => (showQuickstart = false)}
+	/>
+{:else}
+	<ChatWindow
+		on:message={(ev) => createConversation(ev.detail)}
+		{loading}
+		assistant={data.assistant}
+		{currentModel}
+		models={data.models}
+		bind:files
+	/>
+{/if}

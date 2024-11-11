@@ -155,6 +155,16 @@ export const load: LayoutServerLoad = async ({ locals, cookies, depends }) => {
 			}))
 		);
 
+	const quickstartDocs = env.QUICKSTART_DOCS ?? "Welcome to the Quickstart Page!";
+	const quickstartAssistants = await collections.assistants
+		.find({ review: ReviewStatus.APPROVED })
+		.project({ name: 1, description: 1 })
+		.toArray();
+	const quickstartTools = await collections.tools
+		.find({ review: ReviewStatus.APPROVED })
+		.project({ displayName: 1, description: 1 })
+		.toArray();
+
 	return {
 		nConversations,
 		conversations: conversations.then(
@@ -294,5 +304,10 @@ export const load: LayoutServerLoad = async ({ locals, cookies, depends }) => {
 		loginRequired,
 		loginEnabled: requiresUser,
 		guestMode: requiresUser && messagesBeforeLogin > 0,
+		quickstart: {
+			docs: quickstartDocs,
+			assistants: quickstartAssistants,
+			tools: quickstartTools,
+		},
 	};
 };
