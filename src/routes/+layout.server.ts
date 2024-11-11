@@ -159,11 +159,23 @@ export const load: LayoutServerLoad = async ({ locals, cookies, depends }) => {
 	const quickstartAssistants = await collections.assistants
 		.find({ review: ReviewStatus.APPROVED })
 		.project({ name: 1, description: 1 })
-		.toArray();
+		.toArray()
+		.then((assistants) =>
+			assistants.map((assistant) => ({
+				...assistant,
+				_id: assistant._id.toString(),
+			}))
+		);
 	const quickstartTools = await collections.tools
 		.find({ review: ReviewStatus.APPROVED })
 		.project({ displayName: 1, description: 1 })
-		.toArray();
+		.toArray()
+		.then((tools) =>
+			tools.map((tool) => ({
+				...tool,
+				_id: tool._id.toString(),
+			}))
+		);
 
 	return {
 		nConversations,
