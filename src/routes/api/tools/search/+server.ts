@@ -33,7 +33,6 @@ export async function GET({ url }) {
 
 	const matchingConfigTools = toolFromConfigs
 		.filter((tool) => !tool?.isHidden)
-		.filter((tool) => tool.name !== "websearch") // filter out websearch tool from config tools since its added separately
 		.filter((tool) => {
 			if (queryTokens) {
 				return generateSearchTokens(tool.displayName).some((token) =>
@@ -54,5 +53,5 @@ export async function GET({ url }) {
 		Pick<BaseTool, "_id" | "displayName" | "color" | "icon"> & { createdByName?: string }
 	>;
 
-	return Response.json(tools.map((tool) => ({ ...tool, _id: tool._id.toString() })).slice(0, 5));
+	return Response.json(tools.map((tool) => ({ ...tool, _id: tool._id.toString() })).slice(0, 50));
 }

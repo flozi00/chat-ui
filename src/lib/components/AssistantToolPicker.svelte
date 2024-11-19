@@ -28,7 +28,7 @@
 	});
 
 	let inputValue = "";
-	let maxValues = 3;
+	let maxValues = 20;
 
 	let suggestions: ToolSuggestion[] = [];
 

@@ -14,6 +14,8 @@ import type { Cookies } from "@sveltejs/kit";
 import { collections } from "$lib/server/database";
 import JSON5 from "json5";
 import { logger } from "$lib/server/logger";
+import { importJWK, jwtVerify, type JWK } from "jose";
+import axios from "axios";
 
 export interface OIDCSettings {
 	redirectURI: string;
@@ -162,6 +164,57 @@ export async function validateAndParseCsrfToken(
 		}
 	} catch (e) {
 		logger.error(e);
+	}
+	return null;
+}
+
+const TEAM_DOMAIN = env.TEAM_DOMAIN;
+const CERTS_URL = `https://${TEAM_DOMAIN}/cdn-cgi/access/certs`;
+
+async function _get_public_keys(): Promise<unknown[]> {
+	try {
+		const response = await axios.get(CERTS_URL);
+		const jwkSet = response.data;
+		return jwkSet.keys;
+	} catch (error) {
+		logger.error("Error fetching public keys from Cloudflare", error);
+		throw error;
+	}
+}
+
+export async function verifyToken(token: string): Promise<{ valid: boolean; email: string }> {
+	try {
+		const keys = await _get_public_keys();
+		for (const keyDict of keys) {
+			try {
+				const publicKey = await importJWK(keyDict as JWK, "RS256");
+				const { payload } = await jwtVerify(token, publicKey);
+				return { valid: true, email: payload.email as string };
+			} catch (error) {
+				// Continue to the next key
+			}
+		}
+		logger.error("No keys worked for token");
+		return { valid: false, email: "anon" };
+	} catch (error) {
+		logger.error("Error verifying token", error);
+		return { valid: false, email: "anon" };
+	}
+}
+
+export async function get_current_username(token: string): Promise<UserinfoResponse | null> {
+	if (token) {
+		const { valid, email } = await verifyToken(token);
+		if (valid) {
+			const user: UserinfoResponse = {
+				sub: email,
+				name: email,
+				nickname: email,
+				email,
+				email_verified: true,
+			};
+			return user;
+		}
 	}
 	return null;
 }

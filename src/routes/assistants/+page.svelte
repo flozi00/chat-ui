@@ -152,12 +152,14 @@
 					Show unfeatured assistants
 				</label>
 			{/if}
-			<a
-				href={`${base}/settings/assistants/new`}
-				class="flex items-center gap-1 whitespace-nowrap rounded-lg border bg-white py-1 pl-1.5 pr-2.5 shadow-sm hover:bg-gray-50 hover:shadow-none dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-700"
-			>
-				<CarbonAdd />Create new assistant
-			</a>
+			{#if data.user?.isAdmin}
+				<a
+					href={`${base}/settings/assistants/new`}
+					class="flex items-center gap-1 whitespace-nowrap rounded-lg border bg-white py-1 pl-1.5 pr-2.5 shadow-sm hover:bg-gray-50 hover:shadow-none dark:border-gray-600 dark:bg-gray-700 dark:hover:bg-gray-700"
+				>
+					<CarbonAdd />Create new assistant
+				</a>
+			{/if}
 		</div>
 
 		<div class="mt-7 flex flex-wrap items-center gap-x-2 gap-y-3 text-sm">

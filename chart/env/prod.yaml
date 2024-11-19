@@ -53,7 +53,7 @@ envVars:
         "tools": true,
         "preprompt": "",
         "parameters": {
-          "stop": ["<|endoftext|>", "<|eot_id|>"],
+          "stop": ["|endoftext|", "<|eot_id|>"],
           "temperature": 0.6,
           "max_new_tokens": 1024,
           "truncate": 7167
@@ -111,7 +111,7 @@ envVars:
         "logoUrl": "https://huggingface.co/datasets/huggingchat/models-logo/resolve/main/qwen-logo.png",
         "preprompt": "You are Qwen, created by Alibaba Cloud. You are a helpful assistant.",
         "parameters": {
-          "stop": ["<|endoftext|>", "<|im_end|>"],
+          "stop": ["|endoftext|", "<|im_end|>"],
           "temperature": 0.6,
           "truncate": 28672,
           "max_new_tokens": 3072
@@ -288,7 +288,7 @@ envVars:
         "websiteUrl": "https://techcommunity.microsoft.com/t5/ai-azure-ai-services-blog/discover-the-new-multi-lingual-high-quality-phi-3-5-slms/ba-p/4225280/",
         "preprompt": "",
         "parameters": {
-          "stop": ["<|end|>", "<|endoftext|>", "<|assistant|>"],
+          "stop": ["<|end|>", "|endoftext|", "<|assistant|>"],
           "temperature": 0.6,
           "truncate": 28672,
           "max_new_tokens": 3072
@@ -316,7 +316,7 @@ envVars:
         },
         "parameters": {
           "temperature": 0.6,
-          "stop": ["<|endoftext|>", "<|eot_id|>"]
+          "stop": ["|endoftext|", "<|eot_id|>"]
         },
         "unlisted": true
       }

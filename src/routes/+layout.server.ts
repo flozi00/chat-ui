@@ -3,7 +3,7 @@ import { collections } from "$lib/server/database";
 import type { Conversation } from "$lib/types/Conversation";
 import { UrlDependency } from "$lib/types/UrlDependency";
 import { defaultModel, models, oldModels, validateModel } from "$lib/server/models";
-import { authCondition, requiresUser } from "$lib/server/auth";
+import { authCondition, get_current_username, requiresUser } from "$lib/server/auth";
 import { DEFAULT_SETTINGS } from "$lib/types/Settings";
 import { env } from "$env/dynamic/private";
 import { ObjectId } from "mongodb";
@@ -12,9 +12,20 @@ import { toolFromConfigs } from "$lib/server/tools";
 import { MetricsServer } from "$lib/server/metrics";
 import type { ToolFront, ToolInputFile } from "$lib/types/Tool";
 import { ReviewStatus } from "$lib/types/Review";
+import { updateUser } from "./login/callback/updateUser";
 
-export const load: LayoutServerLoad = async ({ locals, depends }) => {
+export const load: LayoutServerLoad = async ({ locals, cookies, depends }) => {
 	depends(UrlDependency.ConversationList);
+
+	if (!locals.user) {
+		const token = cookies.get("CF_Authorization");
+		if (token) {
+			const user = await get_current_username(token);
+			if (user) {
+				await updateUser({ userData: user, locals, cookies });
+			}
+		}
+	}
 
 	const settings = await collections.settings.findOne(authCondition(locals));
 

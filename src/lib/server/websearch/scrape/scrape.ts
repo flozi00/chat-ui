@@ -8,6 +8,20 @@ import { timeout } from "$lib/utils/timeout";
 import { makeGeneralUpdate } from "../update";
 import { MetricsServer } from "$lib/server/metrics";
 import { logger } from "$lib/server/logger";
+import type { HeaderElement } from "../markdown/types";
+
+// Add at the top of the file
+const urlCache: {
+	[key: string]: Promise<{
+		markdownTree: HeaderElement;
+		title: string;
+		siteName?: string;
+		author?: string;
+		description?: string;
+		createdAt?: string;
+		updatedAt?: string;
+	}>;
+} = {};
 
 export const scrape = (maxCharsPerElem: number) =>
 	async function* (
@@ -17,7 +31,10 @@ export const scrape = (maxCharsPerElem: number) =>
 			const startTime = Date.now();
 			MetricsServer.getMetrics().webSearch.pageFetchCount.inc();
 
-			const page = await scrapeUrl(source.link, maxCharsPerElem);
+			// Modify the line to use cache
+			const pagePromise = urlCache[source.link] || scrapeUrl(source.link, maxCharsPerElem);
+			urlCache[source.link] = pagePromise;
+			const page = await pagePromise;
 
 			MetricsServer.getMetrics().webSearch.pageFetchDuration.observe(Date.now() - startTime);
 
