@@ -6,6 +6,4 @@
 	export let form: ActionData;
 </script>
 
-{#if data.user?.isAdmin}
 <AssistantSettings bind:form models={data.models} />
-{/if}
