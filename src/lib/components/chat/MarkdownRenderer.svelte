@@ -48,6 +48,18 @@
 		renderer,
 	};
 
+	function escapeHTML(content: string) {
+		return content.replace(
+			/[<>&\n]/g,
+			(x) =>
+				({
+					"<": "&lt;",
+					">": "&gt;",
+					"&": "&amp;",
+				}[x] || x)
+		);
+	}
+
 	$: tokens = marked.lexer(addInlineCitations(content, sources));
 
 	function processLatex(parsed: string) {
@@ -101,7 +113,7 @@
 		{#if token.type === "code"}
 			<CodeBlock lang={token.lang} code={token.text} />
 		{:else}
-			{@const parsed = marked.parse(processLatex(token.raw), options)}
+			{@const parsed = marked.parse(processLatex(escapeHTML(token.raw)), options)}
 			{#await parsed then parsed}
 				<!-- eslint-disable-next-line svelte/no-at-html-tags -->
 				{@html DOMPurify.sanitize(parsed)}
@@ -109,3 +121,9 @@
 		{/if}
 	{/each}
 </div>
+
+<style lang="postcss">
+	:global(.katex-display) {
+		overflow: auto hidden;
+	}
+</style>
