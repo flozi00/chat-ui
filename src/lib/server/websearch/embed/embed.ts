@@ -1,14 +1,14 @@
 import { MetricsServer } from "$lib/server/metrics";
 import type { WebSearchScrapedSource, WebSearchUsedSource } from "$lib/types/WebSearch";
 import type { EmbeddingBackendModel } from "../../embeddingModels";
-import { getSentenceSimilarity, innerProduct } from "../../sentenceSimilarity";
+import { getSentenceSimilarity } from "../../sentenceSimilarity";
 import { MarkdownElementType, type MarkdownElement } from "../markdown/types";
 import { stringifyMarkdownElement } from "../markdown/utils/stringify";
 import { getCombinedSentenceSimilarity } from "./combine";
 import { flattenTree } from "./tree";
 
-const MIN_CHARS = 3_000;
-const SOFT_MAX_CHARS = 8_000;
+const MIN_CHARS = 4_000;
+const SOFT_MAX_CHARS = 16_000;
 
 export async function findContextSources(
 	sources: WebSearchScrapedSource[],
@@ -47,12 +47,6 @@ export async function findContextSources(
 	for (const embedding of topEmbeddings) {
 		const elem = markdownElems[embedding.idx];
 
-		// Ignore elements that are too similar to already selected elements
-		const tooSimilar = selectedEmbeddings.some(
-			(selectedEmbedding) => innerProduct(selectedEmbedding, embedding.embedding) < 0.01
-		);
-		if (tooSimilar) continue;
-
 		// Add element
 		if (!selectedMarkdownElems.has(elem)) {
 			selectedMarkdownElems.add(elem);
@@ -70,7 +64,7 @@ export async function findContextSources(
 		if (totalChars > MIN_CHARS && embedding.distance > 0.25) break;
 	}
 
-	const contextSources = sourcesMarkdownElems
+	let contextSources = sourcesMarkdownElems
 		.map<WebSearchUsedSource>((elems, idx) => {
 			const sourceSelectedElems = elems.filter((elem) => selectedMarkdownElems.has(elem));
 			const context = sourceSelectedElems.map(stringifyMarkdownElement).join("\n");
@@ -78,6 +72,14 @@ export async function findContextSources(
 			return { ...source, context };
 		})
 		.filter((contextSource) => contextSource.context.length > 0);
+
+	// check for duplicate sources
+	const seenSources = new Set<string>();
+	contextSources = contextSources.filter((contextSource) => {
+		const seen = seenSources.has(contextSource.link);
+		seenSources.add(contextSource.link);
+		return !seen;
+	});
 
 	MetricsServer.getMetrics().webSearch.embeddingDuration.observe(Date.now() - startTime);
 

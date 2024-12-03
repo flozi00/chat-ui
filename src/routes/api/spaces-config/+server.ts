@@ -12,19 +12,7 @@ export async function GET({ url }) {
 		return new Response("Missing space", { status: 400 });
 	}
 	// Extract namespace from space URL or use as-is if it's already in namespace format
-	let namespace = null;
-	if (space.startsWith("https://huggingface.co/spaces/")) {
-		namespace = space.split("/").slice(-2).join("/");
-	} else if (space.match(/^[^/]+\/[^/]+$/)) {
-		namespace = space;
-	}
-
-	if (!namespace) {
-		return new Response(
-			"Invalid space name. Specify a namespace or a full URL on huggingface.co.",
-			{ status: 400 }
-		);
-	}
+	const namespace = space;
 
 	try {
 		const api = await (await Client.connect(namespace)).view_api();
