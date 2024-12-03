@@ -216,6 +216,7 @@ export async function* runTools(
 
 				calls.push(...newCalls);
 			} catch (e) {
+				logger.error(e, output.generated_text);
 				logger.error(e, "Error while parsing tool calls, please retry");
 				// error parsing the calls
 				yield {
