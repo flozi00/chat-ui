@@ -1,20 +1,10 @@
 import { redirect } from "@sveltejs/kit";
-import { getOIDCAuthorizationUrl, get_current_username } from "$lib/server/auth";
+import { getOIDCAuthorizationUrl } from "$lib/server/auth";
 import { base } from "$app/paths";
 import { env } from "$env/dynamic/private";
-import { updateUser } from "./callback/updateUser.js";
 
 export const actions = {
-	async default({ url, locals, request, cookies }) {
-		const token = cookies.get("CF_Authorization");
-		if (token) {
-			const user = await get_current_username(token);
-			if (user) {
-				await updateUser({ userData: user, locals, cookies });
-				redirect(303, `${base}/`);
-			}
-		}
-
+	async default({ url, locals, request }) {
 		const referer = request.headers.get("referer");
 		let redirectURI = `${(referer ? new URL(referer) : url).origin}${base}/login/callback`;
 
