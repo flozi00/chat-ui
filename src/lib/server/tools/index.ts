@@ -20,6 +20,7 @@ import directlyAnswer from "./directlyAnswer";
 import fetchUrl from "./web/url";
 import websearch from "./web/search";
 import weather from "./weather";
+import wikipedia from "./wikipedia";
 import { callSpace, getIpToken } from "./utils";
 import { uploadFile } from "../files/uploadFile";
 import type { MessageFile } from "$lib/types/Message";
@@ -122,7 +123,15 @@ export const configTools = z
 			}))
 	)
 	// add the extra hardcoded tools
-	.transform((val) => [...val, calculator, directlyAnswer, fetchUrl, websearch, weather]);
+	.transform((val) => [
+		...val,
+		calculator,
+		directlyAnswer,
+		fetchUrl,
+		websearch,
+		weather,
+		wikipedia,
+	]);
 
 export function getCallMethod(tool: Omit<BaseTool, "call">): BackendCall {
 	return async function* (params, ctx, uuid) {
