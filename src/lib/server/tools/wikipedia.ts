@@ -1,7 +1,5 @@
 import type { ConfigTool } from "$lib/types/Tool";
 import { ObjectId } from "mongodb";
-import { scrapeUrl } from "$lib/server/websearch/scrape/scrape";
-import { stringifyMarkdownElementTree } from "$lib/server/websearch/markdown/utils/stringify";
 
 const WIKIPEDIA_API_URL = "https://en.wikipedia.org/w/api.php";
 
@@ -49,8 +47,12 @@ const wikipedia: ConfigTool = {
 			let results = "";
 			for (const pageid of pageids) {
 				const urlStr = `https://en.wikipedia.org/?action=raw&curid=${pageid}`;
-				const { title, markdownTree } = await scrapeUrl(urlStr, Infinity);
-				results = stringifyMarkdownElementTree(markdownTree);
+				const pageData = await fetch(urlStr);
+				if (!pageData.ok) {
+					throw new Error("Failed to fetch from Wikipedia API");
+				}
+				results = await pageData.text();
+				break;
 			}
 
 			return {
