@@ -329,13 +329,10 @@ async function prepareFiles(
 	imageProcessor: ReturnType<typeof makeImageProcessor>,
 	files: MessageFile[]
 ): Promise<OpenAI.Chat.Completions.ChatCompletionContentPartImage[]> {
-	const processedFiles = await Promise.all(
-		files.filter((file) => file.mime.startsWith("image/")).map(imageProcessor)
-	);
-	return processedFiles.map((file) => ({
+	return files.map((file) => ({
 		type: "image_url" as const,
 		image_url: {
-			url: `data:${file.mime};base64,${file.image.toString("base64")}`,
+			url: `data:${file.mime};base64,${file.value}`,
 		},
 	}));
 }
