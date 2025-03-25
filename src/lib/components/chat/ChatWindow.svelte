@@ -221,11 +221,11 @@
 	let activeMimeTypes = $derived(
 		Array.from(
 			new Set([
-				...mimeTypesFromActiveTools, // fetch mime types from active tools either from tool settings or active assistant
-				...(currentModel.tools && !assistant ? ["application/pdf"] : []), // if its a tool model, we can always enable document parser so we always accept pdfs
-				...(currentModel.multimodal
-					? (currentModel.multimodalAcceptedMimetypes ?? ["image/*"])
-					: []), // if its a multimodal model, we always accept images
+				...mimeTypesFromActiveTools, // fetch mime types from active tools either from assistant or active tools
+				...(currentModel.tools && !assistant ? ["application/pdf"] : []), // if its a tool model, we can always enable document parser
+				...(currentModel.multimodal 
+					? (currentModel.multimodalAcceptedMimetypes ?? ["image/*", "audio/*"]) // Add audio/* for multimodal models
+					: []), // if its a multimodal model, we always accept images and audio
 			])
 		)
 	);

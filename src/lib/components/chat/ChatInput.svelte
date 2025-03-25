@@ -24,6 +24,7 @@
 	import { captureScreen } from "$lib/utils/screenshot";
 	import IconScreenshot from "../icons/IconScreenshot.svelte";
 	import { loginModalOpen } from "$lib/stores/loginModal";
+	import IconMicrophone from "../icons/IconMicrophone.svelte";
 
 	interface Props {
 		files?: File[];
@@ -150,6 +151,50 @@
 					![documentParserToolId, imageGenToolId, webSearchToolId, fetchUrlToolId].includes(t._id)
 			) satisfies ToolFront[]
 	);
+
+	// Add these new states for recording
+	let isRecording = $state(false);
+	let mediaRecorder: MediaRecorder | null = $state(null);
+	let audioChunks: BlobPart[] = $state([]);
+
+	// Function to handle recording
+	async function toggleRecording() {
+		if (isRecording) {
+			mediaRecorder?.stop();
+			isRecording = false;
+			return;
+		}
+
+		try {
+			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+			audioChunks = [];
+
+			mediaRecorder = new MediaRecorder(stream);
+
+			mediaRecorder.ondataavailable = (event) => {
+				audioChunks.push(event.data);
+			};
+
+			mediaRecorder.onstop = async () => {
+				const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
+				const audioFile = new File([audioBlob], "recorded-audio.webm", { type: "audio/webm" });
+
+				// Add to files array
+				files = [...files, audioFile];
+
+				// Clean up
+				stream.getTracks().forEach((track) => track.stop());
+				mediaRecorder = null;
+				audioChunks = [];
+			};
+
+			mediaRecorder.start();
+			isRecording = true;
+		} catch (error) {
+			console.error("Error accessing microphone:", error);
+			alert("Could not access your microphone. Please check permissions.");
+		}
+	}
 </script>
 
 <div class="flex min-h-full flex-1 flex-col" onpaste={onPaste}>
@@ -284,6 +329,34 @@
 						</label>
 					</HoverTooltip>
 				</div>
+				{#if modelIsMultimodal}
+					<HoverTooltip
+						label={isRecording ? "Stop recording" : "Record audio"}
+						position="top"
+						TooltipClassNames="text-xs !text-left !w-auto whitespace-nowrap !py-1 !mb-0 max-sm:hidden"
+					>
+						<button
+							class="base-tool"
+							class:active-tool={isRecording}
+							disabled={loading}
+							onclick={(e) => {
+								e.preventDefault();
+								if (page.data.loginRequired) {
+									$loginModalOpen = true;
+								} else {
+									toggleRecording();
+								}
+							}}
+						>
+							<IconMicrophone
+								classNames={isRecording ? "text-xl animate-pulse text-red-500" : "text-xl"}
+							/>
+							{#if isRecording}
+								Recording...
+							{/if}
+						</button>
+					</HoverTooltip>
+				{/if}
 				{#if mimeTypes.includes("image/*")}
 					<HoverTooltip
 						label="Capture screenshot"
