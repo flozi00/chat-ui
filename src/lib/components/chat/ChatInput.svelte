@@ -196,8 +196,8 @@
 		}
 	}
 
-	let showWebSearch = $derived(!assistant);
-	let showImageGen = $derived(modelHasTools && !assistant);
+	let showWebSearch = false;
+	let showImageGen = false;
 	let showFileUpload = $derived((modelIsMultimodal || modelHasTools) && mimeTypes.length > 0);
 	let showExtraTools = $derived(modelHasTools && !assistant);
 
