@@ -93,6 +93,7 @@ export async function updateUser(params: {
 			login_name: name,
 			login_email: email,
 			login_orgs: orgs?.map((el) => el.sub),
+			login_orgs_names: orgs?.map((el) => el.name),
 		},
 		"user login"
 	);
