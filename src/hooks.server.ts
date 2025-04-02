@@ -13,9 +13,9 @@ import { logger } from "$lib/server/logger";
 import { AbortedGenerations } from "$lib/server/abortedGenerations";
 import { MetricsServer } from "$lib/server/metrics";
 import { initExitHandler } from "$lib/server/exitHandler";
+import { ObjectId } from "mongodb";
 import { refreshAssistantsCounts } from "$lib/jobs/refresh-assistants-counts";
 import { refreshConversationStats } from "$lib/jobs/refresh-conversation-stats";
-import { updateUser } from "./routes/login/callback/updateUser";
 
 // TODO: move this code on a started server hook, instead of using a "building" flag
 if (!building) {
@@ -120,36 +120,19 @@ export const handle: Handle = async ({ event, resolve }) => {
 	let sessionId: string | null = null;
 
 	if (email) {
-		// If no user exists yet, create one using the updateUser function
-		// Create a userData object similar to what would come from OIDC
-		const userData = {
-			sub: email,
-			name: email.split("@")[0],
+		secretSessionId = sessionId = await sha256(email);
+
+		event.locals.user = {
+			// generate id based on email
+			_id: new ObjectId(sessionId.slice(0, 24)),
+			name: email,
 			email,
-			preferred_username: email.split("@")[0],
-			picture: "",
+			createdAt: new Date(),
+			updatedAt: new Date(),
+			hfUserId: email,
+			avatarUrl: "",
+			logoutDisabled: true,
 		};
-
-		// Use the existing updateUser function to handle user creation
-		await updateUser({
-			userData,
-			locals: event.locals,
-			cookies: event.cookies,
-			userAgent: event.request.headers.get("user-agent") ?? undefined,
-			ip: event.request.headers.get("x-forwarded-for") ?? "unknown",
-		});
-
-		// The sessionId and user will be set by updateUser
-		secretSessionId = event.cookies.get(env.COOKIE_NAME) || null;
-		sessionId = secretSessionId ? await sha256(secretSessionId) : null;
-
-		// IMPORTANT: If we have a new user and a valid session, ensure conversations are associated with the user
-		if (sessionId && event.locals.user?._id) {
-			await collections.conversations.updateMany(
-				{ sessionId, userId: { $exists: false } },
-				{ $set: { userId: event.locals.user._id } }
-			);
-		}
 	} else if (token) {
 		secretSessionId = token;
 		sessionId = await sha256(token);
