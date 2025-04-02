@@ -156,15 +156,21 @@ export const handle: Handle = async ({ event, resolve }) => {
 
 			// Refresh the session cookie
 			refreshSessionCookie(event.cookies, secretSessionId);
+
+			// IMPORTANT: Associate existing conversations created with this sessionId to this user
+			await collections.conversations.updateMany(
+				{ sessionId, userId: { $exists: false } },
+				{ $set: { userId: existingUser._id } }
+			);
 		} else {
 			// If no user exists yet, create one using the updateUser function
 			// Create a userData object similar to what would come from OIDC
 			const userData = {
 				sub: email,
-				name: email.split("@")[0], // Default name from email
+				name: email.split("@")[0],
 				email,
-				preferred_username: email.split("@")[0], // Extract username from email
-				picture: "", // No avatar
+				preferred_username: email.split("@")[0],
+				picture: "",
 			};
 
 			// Use the existing updateUser function to handle user creation
@@ -179,6 +185,14 @@ export const handle: Handle = async ({ event, resolve }) => {
 			// The sessionId and user will be set by updateUser
 			secretSessionId = event.cookies.get(env.COOKIE_NAME) || null;
 			sessionId = secretSessionId ? await sha256(secretSessionId) : null;
+
+			// IMPORTANT: If we have a new user and a valid session, ensure conversations are associated with the user
+			if (sessionId && event.locals.user?._id) {
+				await collections.conversations.updateMany(
+					{ sessionId, userId: { $exists: false } },
+					{ $set: { userId: event.locals.user._id } }
+				);
+			}
 		}
 	} else if (token) {
 		secretSessionId = token;
