@@ -100,6 +100,7 @@ export async function updateUser(params: {
 	const isAdmin =
 		(env.HF_ORG_ADMIN && orgs?.some((org) => org.sub === env.HF_ORG_ADMIN)) ||
 		(email && adminEmails.includes(email)) ||
+		username === env.HF_ADMIN_USERNAME ||
 		false;
 
 	const isEarlyAccess =
