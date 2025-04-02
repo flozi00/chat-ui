@@ -16,6 +16,7 @@ import { initExitHandler } from "$lib/server/exitHandler";
 import { ObjectId } from "mongodb";
 import { refreshAssistantsCounts } from "$lib/jobs/refresh-assistants-counts";
 import { refreshConversationStats } from "$lib/jobs/refresh-conversation-stats";
+import { updateUser } from "./routes/login/callback/updateUser";
 
 // TODO: move this code on a started server hook, instead of using a "building" flag
 if (!building) {
@@ -120,19 +121,65 @@ export const handle: Handle = async ({ event, resolve }) => {
 	let sessionId: string | null = null;
 
 	if (email) {
-		secretSessionId = sessionId = await sha256(email);
+		// First check if we already have a user with this email
+		const existingUser = await collections.users.findOne({ email });
 
-		event.locals.user = {
-			// generate id based on email
-			_id: new ObjectId(sessionId.slice(0, 24)),
-			name: email,
-			email,
-			createdAt: new Date(),
-			updatedAt: new Date(),
-			hfUserId: email,
-			avatarUrl: "",
-			logoutDisabled: true,
-		};
+		if (existingUser) {
+			// If user exists, just set the user and create/update session
+			event.locals.user = existingUser;
+
+			// Create/refresh session
+			secretSessionId = token || crypto.randomUUID();
+			sessionId = await sha256(secretSessionId);
+
+			// Set the sessionId in locals for this request
+			event.locals.sessionId = sessionId;
+
+			// Update or create the session
+			await collections.sessions.updateOne(
+				{ sessionId },
+				{
+					$set: {
+						userId: existingUser._id,
+						updatedAt: new Date(),
+						expiresAt: addWeeks(new Date(), 2),
+						userAgent: event.request.headers.get("user-agent") ?? undefined,
+						ip: event.request.headers.get("x-forwarded-for") || "unknown",
+					},
+					$setOnInsert: {
+						_id: new ObjectId(),
+						createdAt: new Date(),
+					},
+				},
+				{ upsert: true }
+			);
+
+			// Refresh the session cookie
+			refreshSessionCookie(event.cookies, secretSessionId);
+		} else {
+			// If no user exists yet, create one using the updateUser function
+			// Create a userData object similar to what would come from OIDC
+			const userData = {
+				sub: email,
+				name: email.split("@")[0], // Default name from email
+				email,
+				preferred_username: email.split("@")[0], // Extract username from email
+				picture: "", // No avatar
+			};
+
+			// Use the existing updateUser function to handle user creation
+			await updateUser({
+				userData,
+				locals: event.locals,
+				cookies: event.cookies,
+				userAgent: event.request.headers.get("user-agent") ?? undefined,
+				ip: event.request.headers.get("x-forwarded-for") ?? "unknown",
+			});
+
+			// The sessionId and user will be set by updateUser
+			secretSessionId = event.cookies.get(env.COOKIE_NAME) || null;
+			sessionId = secretSessionId ? await sha256(secretSessionId) : null;
+		}
 	} else if (token) {
 		secretSessionId = token;
 		sessionId = await sha256(token);
