@@ -13,7 +13,6 @@ import { logger } from "$lib/server/logger";
 import { AbortedGenerations } from "$lib/server/abortedGenerations";
 import { MetricsServer } from "$lib/server/metrics";
 import { initExitHandler } from "$lib/server/exitHandler";
-import { ObjectId } from "mongodb";
 import { refreshAssistantsCounts } from "$lib/jobs/refresh-assistants-counts";
 import { refreshConversationStats } from "$lib/jobs/refresh-conversation-stats";
 import { updateUser } from "./routes/login/callback/updateUser";
@@ -121,78 +120,35 @@ export const handle: Handle = async ({ event, resolve }) => {
 	let sessionId: string | null = null;
 
 	if (email) {
-		// First check if we already have a user with this email
-		const existingUser = await collections.users.findOne({ email });
+		// If no user exists yet, create one using the updateUser function
+		// Create a userData object similar to what would come from OIDC
+		const userData = {
+			sub: email,
+			name: email.split("@")[0],
+			email,
+			preferred_username: email.split("@")[0],
+			picture: "",
+		};
 
-		if (existingUser) {
-			// If user exists, just set the user and create/update session
-			event.locals.user = existingUser;
+		// Use the existing updateUser function to handle user creation
+		await updateUser({
+			userData,
+			locals: event.locals,
+			cookies: event.cookies,
+			userAgent: event.request.headers.get("user-agent") ?? undefined,
+			ip: event.request.headers.get("x-forwarded-for") ?? "unknown",
+		});
 
-			// Create/refresh session
-			secretSessionId = token || crypto.randomUUID();
-			sessionId = await sha256(secretSessionId);
+		// The sessionId and user will be set by updateUser
+		secretSessionId = event.cookies.get(env.COOKIE_NAME) || null;
+		sessionId = secretSessionId ? await sha256(secretSessionId) : null;
 
-			// Set the sessionId in locals for this request
-			event.locals.sessionId = sessionId;
-
-			// Update or create the session
-			await collections.sessions.updateOne(
-				{ sessionId },
-				{
-					$set: {
-						userId: existingUser._id,
-						updatedAt: new Date(),
-						expiresAt: addWeeks(new Date(), 2),
-						userAgent: event.request.headers.get("user-agent") ?? undefined,
-						ip: event.request.headers.get("x-forwarded-for") || "unknown",
-					},
-					$setOnInsert: {
-						_id: new ObjectId(),
-						createdAt: new Date(),
-					},
-				},
-				{ upsert: true }
-			);
-
-			// Refresh the session cookie
-			refreshSessionCookie(event.cookies, secretSessionId);
-
-			// IMPORTANT: Associate existing conversations created with this sessionId to this user
+		// IMPORTANT: If we have a new user and a valid session, ensure conversations are associated with the user
+		if (sessionId && event.locals.user?._id) {
 			await collections.conversations.updateMany(
 				{ sessionId, userId: { $exists: false } },
-				{ $set: { userId: existingUser._id } }
+				{ $set: { userId: event.locals.user._id } }
 			);
-		} else {
-			// If no user exists yet, create one using the updateUser function
-			// Create a userData object similar to what would come from OIDC
-			const userData = {
-				sub: email,
-				name: email.split("@")[0],
-				email,
-				preferred_username: email.split("@")[0],
-				picture: "",
-			};
-
-			// Use the existing updateUser function to handle user creation
-			await updateUser({
-				userData,
-				locals: event.locals,
-				cookies: event.cookies,
-				userAgent: event.request.headers.get("user-agent") ?? undefined,
-				ip: event.request.headers.get("x-forwarded-for") ?? "unknown",
-			});
-
-			// The sessionId and user will be set by updateUser
-			secretSessionId = event.cookies.get(env.COOKIE_NAME) || null;
-			sessionId = secretSessionId ? await sha256(secretSessionId) : null;
-
-			// IMPORTANT: If we have a new user and a valid session, ensure conversations are associated with the user
-			if (sessionId && event.locals.user?._id) {
-				await collections.conversations.updateMany(
-					{ sessionId, userId: { $exists: false } },
-					{ $set: { userId: event.locals.user._id } }
-				);
-			}
 		}
 	} else if (token) {
 		secretSessionId = token;
