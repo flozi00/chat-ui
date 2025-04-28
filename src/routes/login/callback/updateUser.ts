@@ -11,6 +11,7 @@ import { addWeeks } from "date-fns";
 import { OIDConfig } from "$lib/server/auth";
 import { config } from "$lib/server/config";
 import { logger } from "$lib/server/logger";
+import JSON5 from "json5";
 
 export async function updateUser(params: {
 	userData: UserinfoResponse;
@@ -76,6 +77,13 @@ export async function updateUser(params: {
 		}>;
 	} & Record<string, string>;
 
+	// Parse admin emails from environment variable
+	const adminEmails = z
+		.array(z.string().email())
+		.optional()
+		.default([])
+		.parse(JSON5.parse(env.ADMIN_EMAILS || "[]"));
+
 	// Dynamically access user data based on NAME_CLAIM from environment
 	// This approach allows us to adapt to different OIDC providers flexibly.
 
@@ -85,6 +93,7 @@ export async function updateUser(params: {
 			login_name: name,
 			login_email: email,
 			login_orgs: orgs?.map((el) => el.sub),
+			login_orgs_names: orgs?.map((el) => el.name),
 		},
 		"user login"
 	);
@@ -100,6 +109,7 @@ export async function updateUser(params: {
 			isAdmin,
 			isEarlyAccess,
 			hfUserId,
+			isAdminByEmail: (email && adminEmails.includes(email)) || false,
 		},
 		`Updating user ${hfUserId}`
 	);
