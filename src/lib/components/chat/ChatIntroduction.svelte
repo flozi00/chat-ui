@@ -54,13 +54,13 @@
 					<div class="flex items-center gap-1.5 font-semibold max-sm:text-smd">
 						{#if currentModel.logoUrl}
 							<img
-								class="overflown aspect-square size-8 rounded border dark:border-gray-700"
+								class="overflown aspect-square size-12 rounded border dark:border-gray-700"
 								src={currentModel.logoUrl}
 								alt=""
 							/>
 						{:else}
 							<div
-								class="size-8 rounded border border-transparent bg-gray-300 dark:bg-gray-800"
+								class="size-12 rounded border border-transparent bg-gray-300 dark:bg-gray-800"
 							></div>
 						{/if}
 						{currentModel.displayName}
