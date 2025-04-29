@@ -60,13 +60,13 @@
 					<div class="flex items-center justify-between gap-1">
 						{#if model.logoUrl}
 							<img
-								class="overflown aspect-square size-6 rounded border dark:border-gray-700"
+								class="overflown aspect-square size-10 rounded border dark:border-gray-700"
 								src={model.logoUrl}
 								alt="{model.displayName} logo"
 							/>
 						{:else}
 							<div
-								class="size-6 rounded border border-transparent bg-gray-300 dark:bg-gray-800"
+								class="size-10 rounded border border-transparent bg-gray-300 dark:bg-gray-800"
 								aria-hidden="true"
 							></div>
 						{/if}
