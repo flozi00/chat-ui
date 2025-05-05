@@ -47,65 +47,6 @@
 		{/if}
 	</div>
 
-	<div class="flex flex-wrap items-center gap-2 md:gap-4">
-		{#if model.modelUrl}
-			<a
-				href={model.modelUrl || "https://huggingface.co/" + model.name}
-				target="_blank"
-				rel="noreferrer"
-				class="flex items-center truncate underline underline-offset-2"
-			>
-				<CarbonArrowUpRight class="mr-1.5 shrink-0 text-xs " />
-				Model page
-			</a>
-		{/if}
-
-		{#if model.datasetName || model.datasetUrl}
-			<a
-				href={model.datasetUrl || "https://huggingface.co/datasets/" + model.datasetName}
-				target="_blank"
-				rel="noreferrer"
-				class="flex items-center truncate underline underline-offset-2"
-			>
-				<CarbonArrowUpRight class="mr-1.5 shrink-0 text-xs " />
-				Dataset page
-			</a>
-		{/if}
-
-		{#if model.websiteUrl}
-			<a
-				href={model.websiteUrl}
-				target="_blank"
-				class="flex items-center truncate underline underline-offset-2"
-				rel="noreferrer"
-			>
-				<CarbonArrowUpRight class="mr-1.5 shrink-0 text-xs " />
-				Model website
-			</a>
-		{/if}
-
-		{#if model.hasInferenceAPI}
-			<a
-				href={"https://huggingface.co/playground?modelId=" + model.name}
-				target="_blank"
-				rel="noreferrer"
-				class="flex items-center truncate underline underline-offset-2"
-			>
-				<CarbonCode class="mr-1.5 shrink-0 text-xs " />
-				API Playground
-			</a>
-		{/if}
-
-		<CopyToClipBoardBtn
-			value="{publicConfig.PUBLIC_ORIGIN || page.url.origin}{base}/models/{model.id}"
-			classNames="!border-none !shadow-none !py-0 !px-1 !rounded-md"
-		>
-			<div class="flex items-center gap-1.5 hover:underline">
-				<CarbonLink />Copy direct link to model
-			</div>
-		</CopyToClipBoardBtn>
-	</div>
-
 	<button
 		class="my-2 flex w-fit items-center rounded-full bg-black px-3 py-1 text-base !text-white"
 		name="Activate model"
