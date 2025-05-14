@@ -261,7 +261,7 @@ export class Database {
 		reports.createIndex({ createdBy: 1, assistantId: 1 }).catch((e) => logger.error(e));
 
 		// Unique index for semaphore and migration results
-		semaphores.createIndex({ key: 1 }, { unique: true }).catch((e) => logger.error(e));
+		semaphores.createIndex({ key: 1 }, { unique: false }).catch((e) => logger.error(e));
 		semaphores
 			.createIndex({ deleteAt: 1 }, { expireAfterSeconds: 1 })
 			.catch((e) => logger.error(e));
