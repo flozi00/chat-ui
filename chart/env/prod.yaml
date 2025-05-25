@@ -28,6 +28,19 @@ ingress:
     alb.ingress.kubernetes.io/target-node-labels: "role-hub-utils=true"
     kubernetes.io/ingress.class: "alb"
 
+ingressInternal:
+  enabled: true
+  path: "/chat"
+  annotations:
+    alb.ingress.kubernetes.io/group.name: hub-prod-internal-public
+    alb.ingress.kubernetes.io/healthcheck-path: "/healthcheck"
+    alb.ingress.kubernetes.io/listen-ports: "[{\"HTTP\": 80}, {\"HTTPS\": 443}]"
+    alb.ingress.kubernetes.io/load-balancer-name: hub-prod-internal-public
+    alb.ingress.kubernetes.io/target-group-attributes: deregistration_delay.timeout_seconds=30
+    alb.ingress.kubernetes.io/target-node-labels: role-hub-lb=true
+    alb.ingress.kubernetes.io/target-type: ip
+    kubernetes.io/ingress.class: "alb"
+
 envVars:
   ADDRESS_HEADER: 'X-Forwarded-For'
   ADMIN_CLI_LOGIN: "false"
@@ -203,7 +216,7 @@ envVars:
         "endpoints": [
           {
             "type": "inference-client",
-            "baseURL": "https://internal.api-inference.huggingface.co/models/deepseek-ai/DeepSeek-R1-Distill-Qwen-32B/v1"
+            "baseURL": "https://b8xf586h164t4vk7.us-east-1.aws.endpoints.huggingface.cloud/v1"
           }
         ]
       },
@@ -545,7 +558,7 @@ envVars:
           "max_new_tokens": 256
         }
         }
-      
+
 
   TEXT_EMBEDDING_MODELS: >
     [{
