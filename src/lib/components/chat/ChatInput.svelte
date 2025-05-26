@@ -25,6 +25,7 @@
 	import { loginModalOpen } from "$lib/stores/loginModal";
 	import IconMicrophone from "../icons/IconMicrophone.svelte";
 	import { isVirtualKeyboard } from "$lib/utils/isVirtualKeyboard";
+	import { MicVAD, utils } from "@ricky0123/vad-web";
 	interface Props {
 		files?: File[];
 		mimeTypes?: string[];
@@ -138,47 +139,76 @@
 			) satisfies ToolFront[]
 	);
 
-	// Add these new states for recording
+	// Replace the existing recording states with VAD-based implementation
 	let isRecording = $state(false);
-	let mediaRecorder: MediaRecorder | null = $state(null);
-	let audioChunks: BlobPart[] = $state([]);
+	let myvad: any = $state(null);
+	let speechChunks: Float32Array[] = $state([]);
 
-	// Function to handle recording
+	// Function to handle VAD-based recording
 	async function toggleRecording() {
 		if (isRecording) {
-			mediaRecorder?.stop();
+			if (myvad) {
+				myvad.pause();
+
+				// Convert accumulated speech chunks to audio file
+				if (speechChunks.length > 0) {
+					// Concatenate all speech chunks
+					const totalLength = speechChunks.reduce((acc, chunk) => acc + chunk.length, 0);
+					const combinedArray = new Float32Array(totalLength);
+					let offset = 0;
+
+					speechChunks.forEach((chunk) => {
+						combinedArray.set(chunk, offset);
+						offset += chunk.length;
+					});
+
+					// Encode to WAV
+					const wavBuffer = utils.encodeWAV(combinedArray);
+					const audioBlob = new Blob([wavBuffer], { type: "audio/wav" });
+					const audioFile = new File([audioBlob], "recorded-speech.wav", { type: "audio/wav" });
+
+					// Add to files array
+					files = [...files, audioFile];
+				}
+
+				// Clean up
+				myvad = null;
+				speechChunks = [];
+			}
 			isRecording = false;
 			return;
 		}
 
 		try {
-			const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-			audioChunks = [];
+			const stream = await navigator.mediaDevices.getUserMedia({
+				audio: {
+					channelCount: 1,
+					echoCancellation: true,
+					autoGainControl: true,
+					noiseSuppression: true,
+				},
+			});
 
-			mediaRecorder = new MediaRecorder(stream);
+			speechChunks = [];
 
-			mediaRecorder.ondataavailable = (event) => {
-				audioChunks.push(event.data);
-			};
+			myvad = await MicVAD.new({
+				stream,
+				model: "v5",
+				positiveSpeechThreshold: 0.4,
+				negativeSpeechThreshold: 0.4,
+				minSpeechFrames: 15,
+				preSpeechPadFrames: 30,
+				onSpeechEnd: (audioArray: Float32Array) => {
+					// Only add audio chunks that contain speech
+					speechChunks = [...speechChunks, audioArray];
+				},
+			});
 
-			mediaRecorder.onstop = async () => {
-				const audioBlob = new Blob(audioChunks, { type: "audio/webm" });
-				const audioFile = new File([audioBlob], "recorded-audio.webm", { type: "audio/webm" });
-
-				// Add to files array
-				files = [...files, audioFile];
-
-				// Clean up
-				stream.getTracks().forEach((track) => track.stop());
-				mediaRecorder = null;
-				audioChunks = [];
-			};
-
-			mediaRecorder.start();
+			myvad.start();
 			isRecording = true;
 		} catch (error) {
-			console.error("Error accessing microphone:", error);
-			alert("Could not access your microphone. Please check permissions.");
+			console.error("Error accessing microphone or initializing VAD:", error);
+			alert("Could not access your microphone or initialize voice detection. Please check permissions.");
 		}
 	}
 

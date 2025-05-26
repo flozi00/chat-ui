@@ -80,6 +80,7 @@
 		"@iconify-json/bi": "^1.1.21",
 		"@playwright/browser-chromium": "^1.52.0",
 		"@resvg/resvg-js": "^2.6.2",
+		"@ricky0123/vad-web": "^0.0.24",
 		"autoprefixer": "^10.4.14",
 		"aws-sigv4-fetch": "^4.0.1",
 		"aws4": "^1.13.0",
