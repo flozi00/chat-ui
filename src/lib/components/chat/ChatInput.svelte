@@ -198,6 +198,7 @@
 				negativeSpeechThreshold: 0.4,
 				minSpeechFrames: 8,
 				preSpeechPadFrames: 30,
+				redemptionFrames: 30,
 				onSpeechEnd: (audioArray: Float32Array) => {
 					// Only add audio chunks that contain speech
 					speechChunks = [...speechChunks, audioArray];
