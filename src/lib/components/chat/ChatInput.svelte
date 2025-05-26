@@ -196,7 +196,7 @@
 				model: "v5",
 				positiveSpeechThreshold: 0.4,
 				negativeSpeechThreshold: 0.4,
-				minSpeechFrames: 15,
+				minSpeechFrames: 8,
 				preSpeechPadFrames: 30,
 				onSpeechEnd: (audioArray: Float32Array) => {
 					// Only add audio chunks that contain speech
