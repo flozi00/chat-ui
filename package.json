@@ -71,7 +71,7 @@
 	"dependencies": {
 		"@aws-sdk/credential-providers": "^3.592.0",
 		"@cliqz/adblocker-playwright": "^1.34.0",
-		"@gradio/client": "^1.8.0",
+		"@gradio/client": "^1.15.0",
 		"@huggingface/hub": "^0.5.1",
 		"@huggingface/inference": "^3.12.1",
 		"@huggingface/mcp-client": "^0.1.1",

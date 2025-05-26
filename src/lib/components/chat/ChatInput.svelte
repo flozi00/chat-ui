@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { createEventDispatcher, onMount } from "svelte";
+	import { createEventDispatcher, onMount, tick } from "svelte";
 
 	import HoverTooltip from "$lib/components/HoverTooltip.svelte";
 	import IconInternet from "$lib/components/icons/IconInternet.svelte";
@@ -26,6 +26,7 @@
 	import IconMicrophone from "../icons/IconMicrophone.svelte";
 	import { isVirtualKeyboard } from "$lib/utils/isVirtualKeyboard";
 	import { MicVAD, utils } from "@ricky0123/vad-web";
+
 	interface Props {
 		files?: File[];
 		mimeTypes?: string[];
@@ -139,46 +140,29 @@
 			) satisfies ToolFront[]
 	);
 
-	// Replace the existing recording states with VAD-based implementation
+	// ASR and VAD states
 	let isRecording = $state(false);
 	let myvad: any = $state(null);
-	let speechChunks: Float32Array[] = $state([]);
 
-	// Function to handle VAD-based recording
+	// Helper function to convert Float32Array to WAV Blob using VAD utils
+	function float32ArrayToWAVBlob(audioData: Float32Array): Blob {
+		const wavBuffer = utils.encodeWAV(audioData);
+		return new Blob([wavBuffer], { type: "audio/wav" });
+	}
+
+	// Function to handle VAD-based recording and transcription
 	async function toggleRecording() {
 		if (isRecording) {
+			// Stop recording
 			if (myvad) {
 				myvad.pause();
-
-				// Convert accumulated speech chunks to audio file
-				if (speechChunks.length > 0) {
-					// Concatenate all speech chunks
-					const totalLength = speechChunks.reduce((acc, chunk) => acc + chunk.length, 0);
-					const combinedArray = new Float32Array(totalLength);
-					let offset = 0;
-
-					speechChunks.forEach((chunk) => {
-						combinedArray.set(chunk, offset);
-						offset += chunk.length;
-					});
-
-					// Encode to WAV
-					const wavBuffer = utils.encodeWAV(combinedArray);
-					const audioBlob = new Blob([wavBuffer], { type: "audio/wav" });
-					const audioFile = new File([audioBlob], "recorded-speech.wav", { type: "audio/wav" });
-
-					// Add to files array
-					files = [...files, audioFile];
-				}
-
-				// Clean up
-				myvad = null;
-				speechChunks = [];
+				myvad = null; 
 			}
 			isRecording = false;
 			return;
 		}
 
+		// Start recording
 		try {
 			const stream = await navigator.mediaDevices.getUserMedia({
 				audio: {
@@ -189,19 +173,52 @@
 				},
 			});
 
-			speechChunks = [];
-
 			myvad = await MicVAD.new({
 				stream,
-				model: "v5",
+				model: "v5", 
 				positiveSpeechThreshold: 0.4,
 				negativeSpeechThreshold: 0.4,
 				minSpeechFrames: 8,
 				preSpeechPadFrames: 30,
-				redemptionFrames: 30,
-				onSpeechEnd: (audioArray: Float32Array) => {
-					// Only add audio chunks that contain speech
-					speechChunks = [...speechChunks, audioArray];
+				redemptionFrames: 120,
+				onSpeechEnd: async (audioArray: Float32Array) => {
+					if (audioArray.length === 0 || !myvad || !myvad.audioContext) {
+						return;
+					}
+					console.log("Transcribing speech segment via Backend API...");
+					try {
+						const audio_blob = float32ArrayToWAVBlob(audioArray);
+
+						const formData = new FormData();
+						formData.append("audio_blob", audio_blob, "audio.wav");
+
+						const response = await fetch(`${base}/api/transcribe`, {
+							method: "POST",
+							body: formData,
+						});
+
+						if (!response.ok) {
+							const errorText = await response.text();
+							console.error("Error from backend transcription API:", errorText);
+							alert(`Error transcribing audio: ${errorText || response.statusText}`);
+							return;
+						}
+
+						const result = await response.json();
+						const transcribedText = result.transcription?.trim() ?? "";
+
+						if (transcribedText) {
+							value = value + (value.length > 0 && !value.endsWith(" ") ? " " : "") + transcribedText;
+							await tick(); 
+							adjustTextareaHeight();
+							textareaElement?.focus();
+						}
+					} catch (error) {
+						console.error("Error during backend API transcription call:", error);
+						alert("Error transcribing audio. Please try again.");
+					} finally {
+						console.log("Backend API transcription attempt finished.");
+					}
 				},
 			});
 
@@ -210,6 +227,11 @@
 		} catch (error) {
 			console.error("Error accessing microphone or initializing VAD:", error);
 			alert("Could not access your microphone or initialize voice detection. Please check permissions.");
+			isRecording = false;
+			if (myvad) {
+				myvad.destroy?.(); // Or pause, ensure cleanup
+				myvad = null;
+			}
 		}
 	}
 
