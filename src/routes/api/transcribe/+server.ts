@@ -1,4 +1,3 @@
-import { Client, handle_file } from "@gradio/client";
 import type { RequestHandler } from "@sveltejs/kit";
 import { error } from "@sveltejs/kit";
 
@@ -11,43 +10,68 @@ export const POST: RequestHandler = async ({ request }) => {
 			throw error(400, "Audio blob is required");
 		}
 
-		// The Gradio client URL should ideally be configurable
-		const gradioUrl = "http://inference-server:8000/";
-		const gradioEndpoint = "/process_audio_file";
+		const newApiUrl = "http://inference-server:8000/intern/api/asr/transcribe";
+		const apiFormData = new FormData();
+		apiFormData.append("file", audioBlob, audioBlob.name || "recording.wav"); // Provide a default filename if not available
+		apiFormData.append("tiny", "false"); // As per the curl example
 
-		const app = await Client.connect(gradioUrl);
-		const result = await app.predict(gradioEndpoint, [handle_file(audioBlob)]);
+		const response = await fetch(newApiUrl, {
+			method: "POST",
+			body: apiFormData,
+			headers: {
+				// 'Content-Type': 'multipart/form-data' is automatically set by fetch when using FormData
+				accept: "application/json",
+			},
+		});
+
+		if (!response.ok) {
+			const errorBody = await response.text();
+			console.error("API Error Response:", errorBody);
+			throw error(
+				response.status,
+				`API request failed with status ${response.status}: ${errorBody}`
+			);
+		}
+
+		const result = await response.json();
 
 		let transcribedText = "";
-		if (result && Array.isArray(result.data)) {
-			if (result.data.length === 0) {
-				transcribedText = "";
-				console.log("Gradio API returned no transcription data via backend.");
-			} else {
-				// always a JSON string: parse it first
-				let items: unknown;
-				try {
-					items = JSON.parse(result.data[0] as string);
-				} catch {
-					// fallback to raw text if parsing fails
-					transcribedText = (result.data[0] as string).trim();
-					items = null;
-				}
-
-				if (Array.isArray(items)) {
-					// combine all `text` fields
-					transcribedText = (items as { text: string }[])
-						.map((it) => it.text)
-						.join(" ")
-						.trim();
-				} else if (!transcribedText) {
-					console.warn("Unexpected transcription result format:", result);
-					throw error(500, "Unexpected transcription result format from Gradio");
-				}
-			}
+		// Assuming the new API returns a JSON object with a 'transcription' field
+		// or a similar structure. You might need to adjust this based on the actual API response.
+		if (result && typeof result.transcription === "string") {
+			transcribedText = result.transcription.trim();
+		} else if (result && typeof result.text === "string") {
+			// Common alternative
+			transcribedText = result.text.trim();
+		} else if (
+			result &&
+			Array.isArray(result) &&
+			result.length > 0 &&
+			typeof result[0].text === "string"
+		) {
+			// Handling array of objects with text
+			transcribedText = result
+				.map((item: { text: string }) => item.text)
+				.join(" ")
+				.trim();
 		} else {
-			console.warn("Unexpected transcription result format from Gradio API via backend:", result);
-			throw error(500, "Unexpected transcription result format from Gradio");
+			console.warn("Unexpected transcription result format from new API:", result);
+			// Fallback or specific handling if the structure is different
+			// For example, if it's just a string directly:
+			// if (typeof result === 'string') transcribedText = result.trim();
+			// else throw error(500, "Unexpected transcription result format from new API");
+			// For now, let's assume it might be empty if no specific field is found
+			transcribedText = "";
+			if (Object.keys(result).length === 0 && result.constructor === Object) {
+				// Empty JSON object
+				console.log("New API returned no transcription data.");
+			} else if (typeof result === "string" && result.trim() === "") {
+				// Empty string response
+				console.log("New API returned an empty string.");
+			} else {
+				console.warn("Unexpected transcription result format from new API:", result);
+				throw error(500, "Unexpected transcription result format from new API");
+			}
 		}
 
 		// Placeholder for filtering logic
