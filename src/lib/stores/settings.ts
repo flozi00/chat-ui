@@ -18,6 +18,7 @@ type SettingsStore = {
 	tools?: Array<string>;
 	disableStream: boolean;
 	directPaste: boolean;
+	vadShouldBeActive: boolean; // Add this line
 };
 
 type SettingsStoreWritable = Writable<SettingsStore> & {
@@ -28,8 +29,16 @@ export function useSettingsStore() {
 	return getContext<SettingsStoreWritable>("settings");
 }
 
-export function createSettingsStore(initialValue: Omit<SettingsStore, "recentlySaved">) {
-	const baseStore = writable({ ...initialValue, recentlySaved: false });
+export function createSettingsStore(
+	initialValue: Omit<SettingsStore, "recentlySaved" | "vadShouldBeActive"> & {
+		vadShouldBeActive?: boolean;
+	}
+) {
+	const baseStore = writable({
+		...initialValue,
+		vadShouldBeActive: initialValue.vadShouldBeActive ?? false, // Initialize here
+		recentlySaved: false,
+	});
 
 	let timeoutId: NodeJS.Timeout;
 

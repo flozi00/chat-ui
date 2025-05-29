@@ -1,5 +1,6 @@
 <script lang="ts">
 	import { createEventDispatcher, onMount, tick } from "svelte";
+	import { onDestroy } from "svelte";
 
 	import HoverTooltip from "$lib/components/HoverTooltip.svelte";
 	import IconInternet from "$lib/components/icons/IconInternet.svelte";
@@ -28,7 +29,6 @@
 	import { MicVAD, utils } from "@ricky0123/vad-web";
 	import { Stream } from "stream";
 	import { streamingRequest } from "@huggingface/inference";
-	import { onDestroy } from "svelte";
 
 	interface Props {
 		files?: File[];
@@ -60,6 +60,8 @@
 		focused = $bindable(false),
 	}: Props = $props();
 
+	const settings = useSettingsStore(); // settings store is already imported
+
 	const onFileChange = async (e: Event) => {
 		if (!e.target) return;
 		const target = e.target as HTMLInputElement;
@@ -87,6 +89,11 @@
 
 		const formEl = textareaElement?.closest("form");
 		formEl?.addEventListener("submit", onFormSubmit);
+
+		if ($settings.vadShouldBeActive && !isRecording) { // Use $settings
+			toggleRecording();
+		}
+
 		return () => {
 			formEl?.removeEventListener("submit", onFormSubmit);
 		};
@@ -115,6 +122,7 @@
 				myvad = null;
 			}
 			isRecording = false;
+			settings.instantSet({ vadShouldBeActive: false }); // Update store
 			return;
 		}
 
@@ -132,7 +140,7 @@
 
 			myvad = await MicVAD.new({
 				stream,
-				model: "v5", 
+				model: "v5",
 				positiveSpeechThreshold: 0.4,
 				negativeSpeechThreshold: 0.4,
 				minSpeechFrames: 8,
@@ -168,7 +176,7 @@
 						if (transcribedText) {
 							console.log("VAD: Adding transcribed text, VAD status:", !!myvad);
 							value = value + (value.length > 0 && !value.endsWith(" ") ? " " : "") + transcribedText;
-							await tick(); 
+							await tick();
 							adjustTextareaHeight();
 							textareaElement?.focus();
 						}
@@ -184,11 +192,13 @@
 
 			myvad.start();
 			isRecording = true;
+			settings.instantSet({ vadShouldBeActive: true }); // Update store
 			console.log("VAD: Recording started successfully");
 		} catch (error) {
 			console.error("Error accessing microphone or initializing VAD:", error);
 			alert("Could not access your microphone or initialize voice detection. Please check permissions.");
 			isRecording = false;
+			settings.instantSet({ vadShouldBeActive: false }); // Update store
 			if (myvad) {
 				myvad.destroy?.();
 				myvad = null;
@@ -214,9 +224,13 @@
 
 	onDestroy(() => {
 		console.log("VAD: ChatInput component being destroyed, VAD was active:", !!myvad);
+		if (myvad) {
+			myvad.destroy();
+			myvad = null;
+			// isRecording will be reset when the component re-initializes its state
+			// $settings.vadShouldBeActive remains as is, reflecting the user's desired state.
+		}
 	});
-
-	const settings = useSettingsStore();
 
 	// tool section
 
@@ -284,7 +298,32 @@
 		onfocus={() => (focused = true)}
 		onblur={() => (focused = false)}
 	></textarea>
-
+	<HoverTooltip
+		label={isRecording ? "Stop recording" : "Record audio"}
+		position="top"
+		TooltipClassNames="text-xs !text-left !w-auto whitespace-nowrap !py-1 !mb-0 max-sm:hidden"
+	>
+		<button
+			class="base-tool"
+			class:active-tool={isRecording}
+			disabled={loading}
+			onclick={(e) => {
+				e.preventDefault();
+				if (page.data.loginRequired) {
+					$loginModalOpen = true;
+				} else {
+					toggleRecording();
+				}
+			}}
+		>
+			<IconMicrophone
+				classNames={isRecording ? "text-xl animate-pulse text-red-500" : "text-xl"}
+			/>
+			{#if isRecording}
+				Recording...
+			{/if}
+		</button>
+	</HoverTooltip>
 	{#if !showNoTools}
 		<div
 			class={[
@@ -398,34 +437,6 @@
 						</label>
 					</HoverTooltip>
 				</div>
-				{#if modelIsMultimodal}
-					<HoverTooltip
-						label={isRecording ? "Stop recording" : "Record audio"}
-						position="top"
-						TooltipClassNames="text-xs !text-left !w-auto whitespace-nowrap !py-1 !mb-0 max-sm:hidden"
-					>
-						<button
-							class="base-tool"
-							class:active-tool={isRecording}
-							disabled={loading}
-							onclick={(e) => {
-								e.preventDefault();
-								if (page.data.loginRequired) {
-									$loginModalOpen = true;
-								} else {
-									toggleRecording();
-								}
-							}}
-						>
-							<IconMicrophone
-								classNames={isRecording ? "text-xl animate-pulse text-red-500" : "text-xl"}
-							/>
-							{#if isRecording}
-								Recording...
-							{/if}
-						</button>
-					</HoverTooltip>
-				{/if}
 				{#if mimeTypes.includes("image/*")}
 					<HoverTooltip
 						label="Capture screenshot"
