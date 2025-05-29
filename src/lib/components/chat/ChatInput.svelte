@@ -28,6 +28,7 @@
 	import { MicVAD, utils } from "@ricky0123/vad-web";
 	import { Stream } from "stream";
 	import { streamingRequest } from "@huggingface/inference";
+	import { onDestroy } from "svelte";
 
 	interface Props {
 		files?: File[];
@@ -104,6 +105,98 @@
 		}
 	}
 
+	// Function to handle VAD-based recording and transcription
+	async function toggleRecording() {
+		if (isRecording) {
+			// Stop recording - only when user manually toggles
+			console.log("VAD: Manual stop requested");
+			if (myvad) {
+				myvad.destroy();
+				myvad = null;
+			}
+			isRecording = false;
+			return;
+		}
+
+		// Start recording
+		try {
+			console.log("VAD: Starting recording");
+			const stream = await navigator.mediaDevices.getUserMedia({
+				audio: {
+					channelCount: 1,
+					echoCancellation: true,
+					autoGainControl: true,
+					noiseSuppression: true,
+				},
+			});
+
+			myvad = await MicVAD.new({
+				stream,
+				model: "v5", 
+				positiveSpeechThreshold: 0.4,
+				negativeSpeechThreshold: 0.4,
+				minSpeechFrames: 8,
+				preSpeechPadFrames: 30,
+				redemptionFrames: 120,
+				onSpeechEnd: async (audioArray: Float32Array) => {
+					if (audioArray.length === 0 || !myvad || !myvad.audioContext) {
+						console.log("VAD: Speech end ignored - no audio or VAD destroyed");
+						return;
+					}
+					console.log("VAD: Processing speech segment, VAD still active:", !!myvad);
+					try {
+						const audio_blob = float32ArrayToWAVBlob(audioArray);
+
+						const formData = new FormData();
+						formData.append("audio_blob", audio_blob, "audio.wav");
+
+						const response = await fetch(`${base}/api/transcribe`, {
+							method: "POST",
+							body: formData,
+						});
+
+						if (!response.ok) {
+							const errorText = await response.text();
+							console.error("Error from backend transcription API:", errorText);
+							alert(`Error transcribing audio: ${errorText || response.statusText}`);
+							return;
+						}
+
+						const result = await response.json();
+						const transcribedText = result.transcription?.trim() ?? "";
+
+						if (transcribedText) {
+							console.log("VAD: Adding transcribed text, VAD status:", !!myvad);
+							value = value + (value.length > 0 && !value.endsWith(" ") ? " " : "") + transcribedText;
+							await tick(); 
+							adjustTextareaHeight();
+							textareaElement?.focus();
+						}
+					} catch (error) {
+						console.error("Error during backend API transcription call:", error);
+						alert("Error transcribing audio. Please try again.");
+					} finally {
+						console.log("VAD: Transcription complete, VAD still active:", !!myvad);
+						// VAD continues running - no destroy/pause here
+					}
+				},
+			});
+
+			myvad.start();
+			isRecording = true;
+			console.log("VAD: Recording started successfully");
+		} catch (error) {
+			console.error("Error accessing microphone or initializing VAD:", error);
+			alert("Could not access your microphone or initialize voice detection. Please check permissions.");
+			isRecording = false;
+			if (myvad) {
+				myvad.destroy?.();
+				myvad = null;
+			}
+		}
+	}
+
+	// Add logging to the submit handler
 	function handleKeydown(event: KeyboardEvent) {
 		if (
 			event.key === "Enter" &&
@@ -113,10 +206,15 @@
 			value.trim() !== ""
 		) {
 			event.preventDefault();
-			// Remove VAD stopping logic - let it continue recording
+			console.log("VAD: About to submit, VAD active:", !!myvad);
 			dispatch("submit");
+			console.log("VAD: After submit dispatch, VAD active:", !!myvad);
 		}
 	}
+
+	onDestroy(() => {
+		console.log("VAD: ChatInput component being destroyed, VAD was active:", !!myvad);
+	});
 
 	const settings = useSettingsStore();
 
@@ -151,92 +249,6 @@
 	function float32ArrayToWAVBlob(audioData: Float32Array): Blob {
 		const wavBuffer = utils.encodeWAV(audioData);
 		return new Blob([wavBuffer], { type: "audio/wav" });
-	}
-
-	// Function to handle VAD-based recording and transcription
-	async function toggleRecording() {
-		if (isRecording) {
-			// Stop recording - only when user manually toggles
-			if (myvad) {
-				myvad.destroy();
-				myvad = null;
-			}
-			isRecording = false;
-			return;
-		}
-
-		// Start recording
-		try {
-			const stream = await navigator.mediaDevices.getUserMedia({
-				audio: {
-					channelCount: 1,
-					echoCancellation: true,
-					autoGainControl: true,
-					noiseSuppression: true,
-				},
-			});
-
-			myvad = await MicVAD.new({
-				stream,
-				model: "v5", 
-				positiveSpeechThreshold: 0.4,
-				negativeSpeechThreshold: 0.4,
-				minSpeechFrames: 8,
-				preSpeechPadFrames: 30,
-				redemptionFrames: 120,
-				onSpeechEnd: async (audioArray: Float32Array) => {
-					if (audioArray.length === 0 || !myvad || !myvad.audioContext) {
-						return;
-					}
-					console.log("Transcribing speech segment via Backend API...");
-					try {
-						const audio_blob = float32ArrayToWAVBlob(audioArray);
-
-						const formData = new FormData();
-						formData.append("audio_blob", audio_blob, "audio.wav");
-
-						const response = await fetch(`${base}/api/transcribe`, {
-							method: "POST",
-							body: formData,
-						});
-
-						if (!response.ok) {
-							const errorText = await response.text();
-							console.error("Error from backend transcription API:", errorText);
-							alert(`Error transcribing audio: ${errorText || response.statusText}`);
-							return;
-						}
-
-						const result = await response.json();
-						const transcribedText = result.transcription?.trim() ?? "";
-
-						if (transcribedText) {
-							value = value + (value.length > 0 && !value.endsWith(" ") ? " " : "") + transcribedText;
-							await tick(); 
-							adjustTextareaHeight();
-							textareaElement?.focus();
-						}
-					} catch (error) {
-						console.error("Error during backend API transcription call:", error);
-						alert("Error transcribing audio. Please try again.");
-					} finally {
-						console.log("Backend API transcription attempt finished.");
-						// VAD continues running - no destroy/pause here
-					}
-				},
-			});
-
-			myvad.start();
-			isRecording = true;
-		} catch (error) {
-			console.error("Error accessing microphone or initializing VAD:", error);
-			alert("Could not access your microphone or initialize voice detection. Please check permissions.");
-			isRecording = false;
-			if (myvad) {
-				myvad.destroy?.();
-				myvad = null;
-			}
-		}
 	}
 
 	let showWebSearch = false;
