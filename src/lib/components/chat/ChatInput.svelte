@@ -26,6 +26,8 @@
 	import IconMicrophone from "../icons/IconMicrophone.svelte";
 	import { isVirtualKeyboard } from "$lib/utils/isVirtualKeyboard";
 	import { MicVAD, utils } from "@ricky0123/vad-web";
+	import { Stream } from "stream";
+	import { streamingRequest } from "@huggingface/inference";
 
 	interface Props {
 		files?: File[];
@@ -111,12 +113,7 @@
 			value.trim() !== ""
 		) {
 			event.preventDefault();
-			// Stop VAD before submitting
-			if (isRecording && myvad) {
-				myvad.destroy();
-				myvad = null;
-				isRecording = false;
-			}
+			// Remove VAD stopping logic - let it continue recording
 			dispatch("submit");
 		}
 	}
@@ -159,10 +156,10 @@
 	// Function to handle VAD-based recording and transcription
 	async function toggleRecording() {
 		if (isRecording) {
-			// Stop recording
+			// Stop recording - only when user manually toggles
 			if (myvad) {
 				myvad.destroy();
-				myvad = null; 
+				myvad = null;
 			}
 			isRecording = false;
 			return;
@@ -224,6 +221,7 @@
 						alert("Error transcribing audio. Please try again.");
 					} finally {
 						console.log("Backend API transcription attempt finished.");
+						// VAD continues running - no destroy/pause here
 					}
 				},
 			});
@@ -235,7 +233,7 @@
 			alert("Could not access your microphone or initialize voice detection. Please check permissions.");
 			isRecording = false;
 			if (myvad) {
-				myvad.destroy?.(); // Or pause, ensure cleanup
+				myvad.destroy?.();
 				myvad = null;
 			}
 		}
@@ -266,14 +264,8 @@
 			if (page.data.loginRequired) {
 				ev.preventDefault();
 				$loginModalOpen = true;
-			} else {
-				// Stop VAD before input if recording
-				if (isRecording && myvad) {
-					myvad.pause();
-					myvad = null;
-					isRecording = false;
-				}
 			}
+			// Remove VAD pausing logic - let it continue recording
 		}}
 		{placeholder}
 		{disabled}
