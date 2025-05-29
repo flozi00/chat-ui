@@ -298,38 +298,38 @@
 		onfocus={() => (focused = true)}
 		onblur={() => (focused = false)}
 	></textarea>
-	<HoverTooltip
-		label={isRecording ? "Stop recording" : "Record audio"}
-		position="top"
-		TooltipClassNames="text-xs !text-left !w-auto whitespace-nowrap !py-1 !mb-0 max-sm:hidden"
-	>
-		<button
-			class="base-tool"
-			class:active-tool={isRecording}
-			disabled={loading}
-			onclick={(e) => {
-				e.preventDefault();
-				if (page.data.loginRequired) {
-					$loginModalOpen = true;
-				} else {
-					toggleRecording();
-				}
-			}}
-		>
-			<IconMicrophone
-				classNames={isRecording ? "text-xl animate-pulse text-red-500" : "text-xl"}
-			/>
-			{#if isRecording}
-				Recording...
-			{/if}
-		</button>
-	</HoverTooltip>
 	{#if !showNoTools}
 		<div
 			class={[
 				"scrollbar-custom -ml-0.5 flex max-w-[calc(100%-40px)] flex-wrap items-center justify-start gap-2.5 px-3 pb-2.5 pt-1.5 text-gray-500 dark:text-gray-400 max-md:flex-nowrap max-md:overflow-x-auto sm:gap-2",
 			]}
 		>
+			<HoverTooltip
+				label={isRecording ? "Stop recording" : "Record audio"}
+				position="top"
+				TooltipClassNames="text-xs !text-left !w-auto whitespace-nowrap !py-1 !mb-0 max-sm:hidden"
+			>
+				<button
+					class="base-tool"
+					class:active-tool={isRecording}
+					disabled={loading}
+					onclick={(e) => {
+						e.preventDefault();
+						if (page.data.loginRequired) {
+							$loginModalOpen = true;
+						} else {
+							toggleRecording();
+						}
+					}}
+				>
+					<IconMicrophone
+						classNames={isRecording ? "text-xl animate-pulse text-red-500" : "text-xl"}
+					/>
+					{#if isRecording}
+						Recording...
+					{/if}
+				</button>
+			</HoverTooltip>
 			{#if showWebSearch}
 				<HoverTooltip
 					label="Search the web"
