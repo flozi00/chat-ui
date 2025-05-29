@@ -111,6 +111,12 @@
 			value.trim() !== ""
 		) {
 			event.preventDefault();
+			// Stop VAD before submitting
+			if (isRecording && myvad) {
+				myvad.destroy();
+				myvad = null;
+				isRecording = false;
+			}
 			dispatch("submit");
 		}
 	}
@@ -155,7 +161,7 @@
 		if (isRecording) {
 			// Stop recording
 			if (myvad) {
-				myvad.pause();
+				myvad.destroy();
 				myvad = null; 
 			}
 			isRecording = false;
@@ -260,6 +266,13 @@
 			if (page.data.loginRequired) {
 				ev.preventDefault();
 				$loginModalOpen = true;
+			} else {
+				// Stop VAD before input if recording
+				if (isRecording && myvad) {
+					myvad.pause();
+					myvad = null;
+					isRecording = false;
+				}
 			}
 		}}
 		{placeholder}
