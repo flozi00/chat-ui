@@ -145,7 +145,7 @@
 				negativeSpeechThreshold: 0.4,
 				minSpeechFrames: 8,
 				preSpeechPadFrames: 30,
-				redemptionFrames: 120,
+				redemptionFrames: 60,
 				onSpeechEnd: async (audioArray: Float32Array) => {
 					if (audioArray.length === 0 || !myvad || !myvad.audioContext) {
 						console.log("VAD: Speech end ignored - no audio or VAD destroyed");
