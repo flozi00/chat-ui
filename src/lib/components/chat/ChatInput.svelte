@@ -90,7 +90,8 @@
 		const formEl = textareaElement?.closest("form");
 		formEl?.addEventListener("submit", onFormSubmit);
 
-		if ($settings.vadShouldBeActive && !isRecording) { // Use $settings
+		if ($settings.vadShouldBeActive && !isRecording) {
+			// Use $settings
 			toggleRecording();
 		}
 
@@ -175,7 +176,8 @@
 
 						if (transcribedText) {
 							console.log("VAD: Adding transcribed text, VAD status:", !!myvad);
-							value = value + (value.length > 0 && !value.endsWith(" ") ? " " : "") + transcribedText;
+							value =
+								value + (value.length > 0 && !value.endsWith(" ") ? " " : "") + transcribedText;
 							await tick();
 							adjustTextareaHeight();
 							textareaElement?.focus();
@@ -196,7 +198,9 @@
 			console.log("VAD: Recording started successfully");
 		} catch (error) {
 			console.error("Error accessing microphone or initializing VAD:", error);
-			alert("Could not access your microphone or initialize voice detection. Please check permissions.");
+			alert(
+				"Could not access your microphone or initialize voice detection. Please check permissions."
+			);
 			isRecording = false;
 			settings.instantSet({ vadShouldBeActive: false }); // Update store
 			if (myvad) {
@@ -217,6 +221,7 @@
 		) {
 			event.preventDefault();
 			console.log("VAD: About to submit, VAD active:", !!myvad);
+			adjustTextareaHeight();
 			dispatch("submit");
 			console.log("VAD: After submit dispatch, VAD active:", !!myvad);
 		}
