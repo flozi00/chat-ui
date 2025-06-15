@@ -9,7 +9,20 @@
 	const settings = useSettingsStore();
 	let { models, currentModel }: { models: Model[]; currentModel: Model } = $props();
 
-	let showDropdown = false;
+	let showDropdown = $state(false);
+	let container: HTMLDivElement;
+
+	$effect(() => {
+		const handleClickOutside = (event: MouseEvent) => {
+			if (showDropdown && container && !container.contains(event.target as Node)) {
+				showDropdown = false;
+			}
+		};
+		document.addEventListener("click", handleClickOutside, true);
+		return () => {
+			document.removeEventListener("click", handleClickOutside, true);
+		};
+	});
 
 	function selectModel(model: Model) {
 		const newSettings = {
@@ -22,7 +35,7 @@
 	}
 </script>
 
-<div class="relative">
+<div class="relative" bind:this={container}>
 	<button
 		class="flex items-center gap-1.5 rounded-lg bg-gray-100 p-2 text-sm font-semibold hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700"
 		onclick={() => (showDropdown = !showDropdown)}
