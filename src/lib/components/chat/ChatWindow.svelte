@@ -28,11 +28,11 @@
 	import { browser } from "$app/environment";
 	import { snapScrollToBottom } from "$lib/actions/snapScrollToBottom";
 	import SystemPromptModal from "../SystemPromptModal.svelte";
-	import ChatIntroduction from "./ChatIntroduction.svelte";
 	import UploadedFile from "./UploadedFile.svelte";
 	import { useSettingsStore } from "$lib/stores/settings";
 	import ModelSwitch from "./ModelSwitch.svelte";
 
+	import Topbar from "../Topbar.svelte";
 	import { fly } from "svelte/transition";
 	import { cubicInOut } from "svelte/easing";
 	import type { ToolFront } from "$lib/types/Tool";
@@ -225,7 +225,7 @@
 			new Set([
 				...mimeTypesFromActiveTools, // fetch mime types from active tools either from assistant or active tools
 				...(currentModel.tools && !assistant ? ["application/pdf"] : []), // if its a tool model, we can always enable document parser
-				...(currentModel.multimodal 
+				...(currentModel.multimodal
 					? (currentModel.multimodalAcceptedMimetypes ?? ["image/*", "audio/*"]) // Add audio/* for multimodal models
 					: []), // if its a multimodal model, we always accept images and audio
 			])
@@ -249,6 +249,7 @@
 />
 
 <div class="relative z-[-1] min-h-0 min-w-0">
+	<Topbar {currentModel} />
 	<div
 		class="scrollbar-custom h-full overflow-y-auto"
 		use:snapScrollToBottom={messages.map((message) => message.content)}
@@ -315,19 +316,7 @@
 					isAuthor={!shared}
 					readOnly={isReadOnly}
 				/>
-			{:else if !assistant}
-				<ChatIntroduction
-					{currentModel}
-					on:message={(ev) => {
-						if (page.data.loginRequired) {
-							ev.preventDefault();
-							$loginModalOpen = true;
-						} else {
-							dispatch("message", ev.detail);
-						}
-					}}
-				/>
-			{:else}
+			{:else if assistant}
 				<AssistantIntroduction
 					{models}
 					{assistant}
@@ -486,37 +475,7 @@
 					"max-sm:hidden": focused && isVirtualKeyboard(),
 				}}
 			>
-				<p>
-					Model:
-					{#if !assistant}
-						{#if models.find((m) => m.id === currentModel.id)}
-							<a
-								href="{base}/settings/{currentModel.id}"
-								class="inline-flex items-center hover:underline"
-								>{currentModel.displayName}<CarbonCaretDown class="text-xxs" /></a
-							>
-						{:else}
-							<span class="inline-flex items-center line-through dark:border-gray-700">
-								{currentModel.id}
-							</span>
-						{/if}
-					{:else}
-						{@const model = models.find((m) => m.id === assistant?.modelId)}
-						{#if model}
-							<a
-								href="{base}/settings/assistants/{assistant._id}"
-								class="inline-flex items-center border-b hover:text-gray-600 dark:border-gray-700 dark:hover:text-gray-300"
-								>{model?.displayName}<CarbonCaretDown class="text-xxs" /></a
-							>
-						{:else}
-							<span class="inline-flex items-center line-through dark:border-gray-700">
-								{currentModel.id}
-							</span>
-						{/if}
-					{/if}
-					<span class="max-sm:hidden">·</span><br class="sm:hidden" /> Generated content may be inaccurate
-					or false.
-				</p>
+				<p>Generated content may be inaccurate or false.</p>
 				{#if messages.length}
 					<button
 						class="flex flex-none items-center hover:text-gray-400 max-sm:rounded-lg max-sm:bg-gray-50 max-sm:px-2.5 dark:max-sm:bg-gray-800"
