@@ -249,7 +249,7 @@
 />
 
 <div class="relative z-[-1] min-h-0 min-w-0">
-	<Topbar {currentModel} />
+	<Topbar {currentModel} {models} />
 	<div
 		class="scrollbar-custom h-full overflow-y-auto"
 		use:snapScrollToBottom={messages.map((message) => message.content)}

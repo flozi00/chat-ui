@@ -1,13 +1,14 @@
 <script lang="ts">
 	import type { Model } from "$lib/types/Model";
 	import { base } from "$app/paths";
-	import IconGear from "~icons/bi/gear-fill";
+	import ModelDropdown from "./ModelDropdown.svelte";
 
 	interface Props {
+		models: Model[];
 		currentModel: Model;
 	}
 
-	let { currentModel }: Props = $props();
+	let { models, currentModel }: Props = $props();
 </script>
 
 <div class="border-b bg-gray-50 dark:border-gray-800 dark:bg-gray-900">
@@ -29,11 +30,8 @@
 				{/if}
 			</div>
 		</div>
-		<a
-			href="{base}/settings/{currentModel.id}"
-			aria-label="Settings"
-			class="btn ml-auto flex h-7 w-7 self-start rounded-full bg-gray-100 p-1 text-xs hover:bg-gray-100 dark:border-gray-600 dark:bg-gray-800 dark:hover:bg-gray-600"
-			><IconGear /></a
-		>
+		<div class="ml-auto">
+			<ModelDropdown {models} {currentModel} />
+		</div>
 	</div>
 </div>
