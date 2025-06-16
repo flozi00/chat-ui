@@ -25,7 +25,6 @@
 	import IconScreenshot from "../icons/IconScreenshot.svelte";
 	import { loginModalOpen } from "$lib/stores/loginModal";
 	import IconMicrophone from "../icons/IconMicrophone.svelte";
-	import type { Serialize } from "$lib/utils/serialize";
 
 	import { isVirtualKeyboard } from "$lib/utils/isVirtualKeyboard";
 	import { MicVAD, utils } from "@ricky0123/vad-web";
@@ -39,7 +38,7 @@
 		placeholder?: string;
 		loading?: boolean;
 		disabled?: boolean;
-		assistant?: Serialize<Assistant> | undefined;
+		assistant?: Assistant | undefined;
 		modelHasTools?: boolean;
 		modelIsMultimodal?: boolean;
 		children?: import("svelte").Snippet;
