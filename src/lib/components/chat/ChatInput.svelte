@@ -223,6 +223,7 @@
 			event.preventDefault();
 			console.log("VAD: About to submit, VAD active:", !!myvad);
 			adjustTextareaHeight();
+			tick();
 			dispatch("submit");
 			console.log("VAD: After submit dispatch, VAD active:", !!myvad);
 		}
